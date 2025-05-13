@@ -15,7 +15,7 @@ const OnboardingPage = () => {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       setPermissionRequested(true);
       toast.success("Microphone access granted!");
-      setTimeout(() => navigate("/dashboard"), 1000);
+      setTimeout(() => navigate("/app/dashboard"), 1000);
     } catch (error) {
       toast.error("Please allow microphone access to use voice features");
     }

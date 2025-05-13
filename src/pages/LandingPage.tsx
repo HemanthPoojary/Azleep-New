@@ -5,6 +5,10 @@ import { Mic, Music, Heart, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { toast } from '@/components/ui/sonner';
+
+// App URL for all redirects
+const APP_URL = "https://app.azleep.ai";
 
 const LandingPage: React.FC = () => {
   const [emailInput, setEmailInput] = useState('');
@@ -12,6 +16,7 @@ const LandingPage: React.FC = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const [webhookUrl, setWebhookUrl] = useState(''); // Store Zapier webhook URL
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,16 +25,31 @@ const LandingPage: React.FC = () => {
     setIsSubmitting(true);
     
     // This is a placeholder for Zapier integration
-    // In a real implementation, this would call your Zapier webhook URL
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // If webhook URL is configured, send to Zapier
+      if (webhookUrl) {
+        await fetch(webhookUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          mode: "no-cors",
+          body: JSON.stringify({
+            email: emailInput,
+            timestamp: new Date().toISOString(),
+            source: "landing_page",
+          }),
+        });
+      }
+      
       console.log("Email submitted:", emailInput);
       setIsSuccess(true);
       setEmailInput('');
+      toast.success("Thanks for signing up!");
       setTimeout(() => setIsSuccess(false), 3000);
     } catch (error) {
       console.error("Error submitting email:", error);
+      toast.error("Failed to submit email. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -81,7 +101,7 @@ const LandingPage: React.FC = () => {
           </p>
           
           <div className="flex flex-col md:flex-row gap-4 justify-center">
-            <a href="https://app.azleep.ai" target="_blank" rel="noopener noreferrer">
+            <a href={APP_URL} target="_blank" rel="noopener noreferrer">
               <Button size="lg" className="text-lg h-12 px-8 w-full md:w-auto bg-white text-[#8E44AD] hover:bg-gray-100 shadow-md hover:shadow-lg transition-all duration-300">
                 Start Now
               </Button>
@@ -95,7 +115,11 @@ const LandingPage: React.FC = () => {
             >
               {isAudioPlaying ? 'Stop' : 'Try a Mini Sleep Cast'}
             </Button>
-            <audio ref={audioRef} src="https://placeholder-url.com/sleepcast-demo.mp3" />
+            <audio 
+              ref={audioRef} 
+              src="https://placeholder-url.com/sleepcast-demo.mp3" 
+              onEnded={() => setIsAudioPlaying(false)}
+            />
           </div>
         </div>
       </section>
@@ -136,13 +160,12 @@ const LandingPage: React.FC = () => {
           <div className="mt-16 bg-[#1e293b] rounded-xl p-6 max-w-3xl mx-auto">
             <h3 className="text-xl font-semibold text-white mb-4">Hear AI Sleep Genie in action</h3>
             <div className="flex items-center justify-center">
-              <Button 
-                onClick={() => console.log("Play VAPI audio demo")} 
-                className="flex items-center gap-2"
-              >
-                <Mic size={18} />
-                Listen to Demo
-              </Button>
+              <a href={APP_URL} target="_blank" rel="noopener noreferrer">
+                <Button className="flex items-center gap-2">
+                  <Mic size={18} />
+                  Try it now
+                </Button>
+              </a>
             </div>
           </div>
         </div>
@@ -176,6 +199,14 @@ const LandingPage: React.FC = () => {
               description="Enjoy better sleep with AI-powered assistance."
               image="https://placeholder-url.com/starry-sky.jpg"
             />
+          </div>
+          
+          <div className="flex justify-center mt-12">
+            <a href={APP_URL} target="_blank" rel="noopener noreferrer">
+              <Button size="lg" className="bg-[#8E44AD] hover:bg-[#9B59B6]">
+                Get Started
+              </Button>
+            </a>
           </div>
         </div>
       </section>
@@ -226,9 +257,24 @@ const LandingPage: React.FC = () => {
                 {isSubmitting ? 'Sending...' : isSuccess ? 'Sent!' : 'Get Updates'}
               </Button>
             </form>
+            
+            {/* Hidden Zapier webhook URL input for admin/development */}
+            <div className="mt-2 text-xs text-gray-500">
+              <details>
+                <summary>Admin</summary>
+                <input
+                  type="text"
+                  value={webhookUrl}
+                  onChange={(e) => setWebhookUrl(e.target.value)}
+                  placeholder="Zapier webhook URL"
+                  className="mt-2 w-full px-3 py-2 text-xs rounded border border-gray-600 bg-gray-800 text-gray-200"
+                />
+                <p className="mt-1 text-xs text-gray-500">Set your Zapier webhook URL here to enable email capture</p>
+              </details>
+            </div>
           </div>
           
-          <a href="https://app.azleep.ai" target="_blank" rel="noopener noreferrer">
+          <a href={APP_URL} target="_blank" rel="noopener noreferrer">
             <Button size="lg" className="mb-12 text-lg h-12 px-10 bg-[#8E44AD] hover:bg-[#9B59B6] shadow-md">
               Access Azleep Now
             </Button>

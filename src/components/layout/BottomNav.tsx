@@ -12,17 +12,17 @@ const BottomNav = () => {
     {
       label: "Dashboard",
       icon: Moon,
-      path: "/dashboard",
+      path: "/app/dashboard",
     },
     {
       label: "Voice",
       icon: Mic,
-      path: "/voice",
+      path: "/app/voice",
     },
     {
       label: "Sleep Cast",
       icon: Music,
-      path: "/sleep-cast",
+      path: "/app/sleep-cast",
     },
   ];
 
