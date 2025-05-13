@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { toast } from '@/components/ui/sonner';
+import Logo from '@/components/Logo';
 
 // App URL for all redirects
 const APP_URL = "/app/onboarding";
@@ -61,6 +62,16 @@ const LandingPage: React.FC = () => {
     }
   };
   return <div className="min-h-screen overflow-x-hidden">
+      {/* Header with Logo */}
+      <header className="absolute top-0 left-0 w-full z-20 p-4">
+        <div className="container mx-auto flex justify-between items-center">
+          <Logo />
+          <div className="flex gap-2">
+            {/* Optional navigation items can go here */}
+          </div>
+        </div>
+      </header>
+
       {/* Hero Section */}
       <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#2C3E50] to-[#8E44AD] p-6">
         {/* Animated stars background */}
@@ -203,7 +214,6 @@ const LandingPage: React.FC = () => {
               Access Azleep Now
             </Button>
           </Link>
-          
           
         </div>
       </section>
