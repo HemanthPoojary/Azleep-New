@@ -7,8 +7,17 @@ const Logo: React.FC<{ className?: string }> = ({ className = '' }) => {
   return (
     <Link to="/" className={`flex items-center gap-2 ${className}`}>
       <div className="relative">
-        <Moon className="text-[#8E44AD] h-6 w-6 md:h-8 md:w-8" />
-        <div className="absolute top-1/2 left-1/2 w-3 h-3 md:w-4 md:h-4 bg-white rounded-full transform -translate-x-1/2 -translate-y-1/2" />
+        {/* Tilted moon for sleeping appearance */}
+        <div className="relative">
+          <Moon 
+            className="text-[#9b87f5] h-6 w-6 md:h-8 md:w-8 transform rotate-90" 
+            strokeWidth={1.5}
+          />
+          {/* "Z" character to represent sleeping */}
+          <div className="absolute top-0 right-0 text-white text-xs md:text-sm font-bold">Z</div>
+          <div className="absolute top-2 right-2 text-white text-xs md:text-sm font-bold opacity-70">z</div>
+          <div className="absolute top-4 right-4 text-white text-xs md:text-sm font-bold opacity-40">z</div>
+        </div>
       </div>
       <span className="font-bold text-xl md:text-2xl text-white">Azleep</span>
     </Link>
