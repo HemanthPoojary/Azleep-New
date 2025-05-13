@@ -12,6 +12,7 @@ import OnboardingPage from "./pages/OnboardingPage";
 import Dashboard from "./pages/Dashboard";
 import SleepCastPage from "./pages/SleepCastPage";
 import VoiceInteractionPage from "./pages/VoiceInteractionPage";
+import LandingPage from "./pages/LandingPage";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/voice-old" element={<VoicePage />} />
           <Route path="/sleep-cast" element={<SleepCastPage />} />
           <Route path="/stats" element={<StatsPage />} />
+          <Route path="/landing" element={<LandingPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

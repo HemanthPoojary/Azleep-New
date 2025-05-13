@@ -1,4 +1,5 @@
 
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -57,6 +58,13 @@
     @apply flex min-h-screen flex-col;
     background: linear-gradient(to bottom, #1a1a2e 0%, #16213e 100%);
   }
+  
+  /* Font family for landing page */
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+  
+  .font-poppins {
+    font-family: 'Poppins', sans-serif;
+  }
 }
 
 .pulse-ring {
@@ -82,6 +90,35 @@
   @apply transition-transform duration-300 hover:scale-105;
 }
 
+/* Twinkling stars animation */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+
+.animate-twinkle {
+  animation: twinkle 2s ease-in-out infinite;
+}
+
+/* New animations for landing page */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 5s ease-in-out infinite;
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}
+
 /* Media query utilities */
 @media (min-width: 768px) {
   .md\:container {
@@ -103,3 +140,28 @@
     max-width: 1280px;
   }
 }
+
+/* Button glow effect */
+.btn-glow {
+  position: relative;
+  z-index: 1;
+}
+
+.btn-glow:after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  background: radial-gradient(circle, rgba(142, 68, 173, 0.8) 0%, rgba(142, 68, 173, 0) 70%);
+  border-radius: var(--radius);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-glow:hover:after {
+  opacity: 1;
+}
+
