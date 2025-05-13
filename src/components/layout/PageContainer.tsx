@@ -1,6 +1,7 @@
 
 import React, { ReactNode } from 'react';
 import BottomNav from './BottomNav';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface PageContainerProps {
   children: ReactNode;
@@ -13,12 +14,16 @@ const PageContainer = ({
   withBottomNav = true, 
   className = "" 
 }: PageContainerProps) => {
+  const isMobile = useIsMobile();
+
   return (
     <div className="app-container">
-      <main className={`flex-1 px-4 pb-20 pt-6 ${className}`}>
-        {children}
+      <main className={`flex-1 px-4 md:px-8 pb-20 pt-6 max-w-4xl mx-auto w-full ${className}`}>
+        <div className="md:max-w-3xl lg:max-w-4xl mx-auto">
+          {children}
+        </div>
       </main>
-      {withBottomNav && <BottomNav />}
+      {withBottomNav && isMobile && <BottomNav />}
     </div>
   );
 };

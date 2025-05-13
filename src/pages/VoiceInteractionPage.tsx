@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageContainer from '@/components/layout/PageContainer';
 import VoiceButton from '@/components/ui/VoiceButton';
@@ -63,15 +63,15 @@ const VoiceInteractionPage = () => {
         <h1 className="text-xl font-bold text-azleep-text">AI Sleep Genie</h1>
       </div>
       
-      <div className="flex flex-1 flex-col h-[70vh]">
-        <div className="mb-4 flex-1 space-y-4 overflow-y-auto rounded-xl bg-azleep-dark/50 p-4">
+      <div className="flex flex-1 flex-col h-[70vh] md:h-[80vh]">
+        <div className="mb-4 flex-1 space-y-4 overflow-y-auto rounded-xl bg-azleep-dark/50 p-4 md:p-6">
           {conversation.map((message, index) => (
             <div 
               key={index} 
               className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
             >
               <div 
-                className={`max-w-[80%] rounded-xl px-4 py-2 ${
+                className={`max-w-[80%] md:max-w-[70%] rounded-xl px-4 py-2 ${
                   message.sender === 'user' 
                     ? 'bg-azleep-primary text-white' 
                     : 'bg-muted/20 text-azleep-text'

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Pause, Volume2 } from 'lucide-react';
+import { Play, Pause, Volume2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { 
@@ -14,6 +14,7 @@ import {
 import { toast } from '@/components/ui/sonner';
 import PageContainer from '@/components/layout/PageContainer';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const sleepCastThemes = [
   { id: 'nature', name: 'Nature', description: 'Calming forest and river sounds' },
@@ -26,6 +27,7 @@ const SleepCastPage = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(70);
   const [selectedTheme, setSelectedTheme] = useState('nature');
+  const isMobile = useIsMobile();
   
   const handlePlayPause = () => {
     setIsPlaying(!isPlaying);
@@ -57,10 +59,20 @@ const SleepCastPage = () => {
                     backgroundSize: '50px 50px'}}>
         </div>
       </div>
+
+      <div className="mb-4 flex items-center">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => navigate('/dashboard')}
+          className="mr-2"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-xl font-bold text-azleep-text">Sleep Cast</h1>
+      </div>
       
-      <div className="flex flex-col items-center justify-center h-[70vh] animate-fade-in">
-        <h1 className="text-2xl font-bold text-azleep-text mb-8">Sleep Cast</h1>
-        
+      <div className="flex flex-col items-center justify-center h-[60vh] md:h-[70vh] animate-fade-in">
         <div className="w-full max-w-md mb-8">
           <Select value={selectedTheme} onValueChange={handleThemeChange}>
             <SelectTrigger className="sleep-card w-full">
@@ -76,10 +88,10 @@ const SleepCastPage = () => {
           </Select>
         </div>
         
-        <div className="w-60 h-60 mb-10">
+        <div className="w-60 h-60 mb-10 md:w-72 md:h-72">
           <AspectRatio ratio={1/1} className="relative">
             <div className={`absolute inset-0 rounded-full sleep-card flex items-center justify-center ${isPlaying ? 'pulse-ring' : ''}`}>
-              <div className="text-center">
+              <div className="text-center px-4">
                 <p className="text-lg font-medium text-azleep-text mb-2">
                   {sleepCastThemes.find(t => t.id === selectedTheme)?.name}
                 </p>
@@ -91,7 +103,7 @@ const SleepCastPage = () => {
           </AspectRatio>
         </div>
         
-        <div className="flex flex-col items-center w-full max-w-xs">
+        <div className="flex flex-col items-center w-full max-w-xs md:max-w-sm">
           <Button 
             variant="outline"
             size="icon" 

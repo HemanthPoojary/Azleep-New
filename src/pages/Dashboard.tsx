@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Moon, Mic, Music, Bell } from 'lucide-react';
+import { Moon, Mic, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { toast } from '@/components/ui/sonner';
 import PageContainer from '@/components/layout/PageContainer';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +23,7 @@ const Dashboard = () => {
   const [showNudge, setShowNudge] = useState(false);
   const [relaxPoints, setRelaxPoints] = useState(42); // Example points
   const userName = "User"; // In a real app, this would come from user state
+  const isMobile = useIsMobile();
   
   // Get time of day for greeting
   const getGreeting = () => {
@@ -44,7 +46,7 @@ const Dashboard = () => {
   return (
     <PageContainer>
       <div className="mb-6 space-y-2 animate-fade-in">
-        <h1 className="text-2xl font-bold text-azleep-text">
+        <h1 className="text-2xl md:text-3xl font-bold text-azleep-text">
           {getGreeting()}, {userName}
         </h1>
         <p className="text-muted-foreground flex items-center">
@@ -53,7 +55,7 @@ const Dashboard = () => {
         </p>
       </div>
       
-      <div className="grid gap-4 mb-8">
+      <div className="grid gap-4 mb-8 md:grid-cols-2 lg:grid-cols-3">
         <Button 
           variant="outline" 
           size="lg" 
@@ -77,7 +79,7 @@ const Dashboard = () => {
         <Button 
           variant="outline" 
           size="lg" 
-          className="sleep-card h-20 justify-start hover-scale"
+          className="sleep-card h-20 justify-start hover-scale md:col-span-2 lg:col-span-1"
           onClick={handleStillAwake}
         >
           <Moon className="h-6 w-6 mr-4 text-azleep-accent" />
@@ -85,7 +87,7 @@ const Dashboard = () => {
         </Button>
       </div>
       
-      <div className="mt-8">
+      <div className="mt-8 max-w-md mx-auto md:mx-0">
         <div className="flex justify-between mb-2">
           <span className="text-sm text-azleep-text">Relaxation Points</span>
           <span className="text-sm text-azleep-primary">{relaxPoints}/100</span>
@@ -95,7 +97,7 @@ const Dashboard = () => {
       
       {/* Late-Night Nudge Alert */}
       <AlertDialog open={showNudge} onOpenChange={setShowNudge}>
-        <AlertDialogContent className="bg-gradient-sleep border-white/10">
+        <AlertDialogContent className="bg-gradient-sleep border-white/10 max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-azleep-text">It's late!</AlertDialogTitle>
             <AlertDialogDescription>

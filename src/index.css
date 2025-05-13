@@ -43,7 +43,7 @@
   }
 
   body {
-    @apply bg-gradient-night text-foreground;
+    @apply bg-gradient-night text-foreground min-h-screen;
   }
 
   .sleep-card {
@@ -80,4 +80,26 @@
 
 .hover-scale {
   @apply transition-transform duration-300 hover:scale-105;
+}
+
+/* Media query utilities */
+@media (min-width: 768px) {
+  .md\:container {
+    width: 100%;
+    max-width: 768px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lg\:container {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .xl\:container {
+    max-width: 1280px;
+  }
 }
