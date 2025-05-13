@@ -7,7 +7,7 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { toast } from '@/components/ui/sonner';
 
 // App URL for all redirects
-const APP_URL = "https://app.azleep.ai";
+const APP_URL = "/app/onboarding";
 const LandingPage: React.FC = () => {
   const [emailInput, setEmailInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,12 +63,11 @@ const LandingPage: React.FC = () => {
   return <div className="min-h-screen overflow-x-hidden">
       {/* Hero Section */}
       <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#2C3E50] to-[#8E44AD] p-6">
-        <div className="absolute inset-0 overflow-hidden">
-          {/* Animated stars background */}
-          <div className="stars-container">
-            {Array.from({
-            length: 50
-          }).map((_, i) => <div key={i} className="absolute rounded-full bg-white animate-pulse-slow" style={{
+        {/* Animated stars background */}
+        <div className="stars-container">
+          {Array.from({
+          length: 50
+        }).map((_, i) => <div key={i} className="absolute rounded-full bg-white animate-pulse-slow" style={{
             width: `${Math.random() * 3 + 1}px`,
             height: `${Math.random() * 3 + 1}px`,
             top: `${Math.random() * 100}%`,
@@ -76,9 +75,8 @@ const LandingPage: React.FC = () => {
             animationDelay: `${Math.random() * 5}s`,
             animationDuration: `${Math.random() * 3 + 2}s`
           }} />)}
-            {/* Moon */}
-            <div className="absolute w-16 h-16 md:w-24 md:h-24 rounded-full bg-gray-200 opacity-80 top-10 right-10 shadow-lg"></div>
-          </div>
+          {/* Moon */}
+          <div className="absolute w-16 h-16 md:w-24 md:h-24 rounded-full bg-gray-200 opacity-80 top-10 right-10 shadow-lg"></div>
         </div>
         
         <div className="container mx-auto text-center z-10 relative">
@@ -90,11 +88,11 @@ const LandingPage: React.FC = () => {
           </p>
           
           <div className="flex flex-col md:flex-row gap-4 justify-center">
-            <a href={APP_URL} target="_blank" rel="noopener noreferrer">
+            <Link to={APP_URL}>
               <Button size="lg" className="text-lg h-12 px-8 w-full md:w-auto bg-white text-[#8E44AD] hover:bg-gray-100 shadow-md hover:shadow-lg transition-all duration-300">
                 Start Now
               </Button>
-            </a>
+            </Link>
             
             <Button onClick={toggleAudio} variant="outline" size="lg" className={`text-lg h-12 px-8 w-full md:w-auto border-white text-white hover:bg-white/10 ${isAudioPlaying ? 'bg-white/20' : ''}`}>
               {isAudioPlaying ? 'Stop' : 'Try a Mini Sleep Cast'}
@@ -151,11 +149,11 @@ const LandingPage: React.FC = () => {
           </div>
           
           <div className="flex justify-center mt-12">
-            <a href={APP_URL} target="_blank" rel="noopener noreferrer">
+            <Link to={APP_URL}>
               <Button size="lg" className="bg-[#8E44AD] hover:bg-[#9B59B6]">
                 Get Started
               </Button>
-            </a>
+            </Link>
           </div>
         </div>
       </section>
@@ -200,11 +198,11 @@ const LandingPage: React.FC = () => {
             </div>
           </div>
           
-          <a href={APP_URL} target="_blank" rel="noopener noreferrer">
+          <Link to={APP_URL}>
             <Button size="lg" className="mb-12 text-lg h-12 px-10 bg-[#8E44AD] hover:bg-[#9B59B6] shadow-md">
               Access Azleep Now
             </Button>
-          </a>
+          </Link>
           
           
         </div>
@@ -272,14 +270,4 @@ const TestimonialCard = ({
     </CardContent>
   </Card>;
 
-// Component for social buttons
-const SocialButton = ({
-  icon,
-  url
-}: {
-  icon: string;
-  url: string;
-}) => <a href={url} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-[#8E44AD] hover:bg-[#9B59B6] flex items-center justify-center transition-colors">
-    {icon}
-  </a>;
 export default LandingPage;
