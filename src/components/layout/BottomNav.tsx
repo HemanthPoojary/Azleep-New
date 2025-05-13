@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Moon, Mic, Calendar } from 'lucide-react';
+import { Moon, Mic, Music } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const BottomNav = () => {
@@ -10,9 +10,9 @@ const BottomNav = () => {
 
   const navItems = [
     {
-      label: "Sleep",
+      label: "Dashboard",
       icon: Moon,
-      path: "/",
+      path: "/dashboard",
     },
     {
       label: "Voice",
@@ -20,9 +20,9 @@ const BottomNav = () => {
       path: "/voice",
     },
     {
-      label: "Stats",
-      icon: Calendar,
-      path: "/stats",
+      label: "Sleep Cast",
+      icon: Music,
+      path: "/sleep-cast",
     },
   ];
 
@@ -34,9 +34,9 @@ const BottomNav = () => {
             key={item.path}
             to={item.path}
             className={cn(
-              "flex flex-col items-center justify-center rounded-md px-4 py-2 text-sm transition-colors",
+              "flex flex-col items-center justify-center rounded-md px-4 py-2 text-sm transition-all",
               currentPath === item.path
-                ? "text-azleep-primary"
+                ? "text-azleep-accent scale-110"
                 : "text-gray-400 hover:text-gray-300"
             )}
           >
