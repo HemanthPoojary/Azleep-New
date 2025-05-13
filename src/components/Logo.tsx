@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Moon, Zzz } from 'lucide-react';
+import { Moon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Logo: React.FC<{ className?: string }> = ({ className = '' }) => {
