@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mic, Music, Heart, Moon } from 'lucide-react';
@@ -279,12 +278,6 @@ const LandingPage: React.FC = () => {
               Access Azleep Now
             </Button>
           </a>
-          
-          <div className="flex justify-center gap-6 mb-8">
-            <SocialButton icon="X" url="https://x.com/azleep" />
-            <SocialButton icon="Instagram" url="https://instagram.com/azleep" />
-            <SocialButton icon="WhatsApp" url="https://wa.me/azleep" />
-          </div>
           
           <p className="text-sm text-gray-400">
             End-to-end encryption for your data. Your privacy matters to us.
