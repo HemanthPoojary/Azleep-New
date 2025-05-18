@@ -6,9 +6,10 @@ import { JournalCanvas } from '@/components/journal/JournalCanvas';
 import { JournalPrompts } from '@/components/journal/JournalPrompts';
 import { JournalSidebar } from '@/components/journal/JournalSidebar';
 import { JournalEntryModal } from '@/components/journal/JournalEntryModal';
+import VoiceJournal from '@/components/journal/VoiceJournal';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { PenLine, BookOpen, Star, Calendar } from 'lucide-react';
+import { PenLine, BookOpen, Star, Calendar, MessageCircle } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,7 +26,7 @@ const JournalPage = () => {
   const state = location.state as LocationState;
   const isMobile = useIsMobile();
   const [showEntryModal, setShowEntryModal] = useState(false);
-  const [activeView, setActiveView] = useState<'canvas' | 'prompts'>('canvas');
+  const [activeView, setActiveView] = useState<'canvas' | 'prompts' | 'voice'>('canvas');
   const [moodFromCheckIn, setMoodFromCheckIn] = useState<string | undefined>(undefined);
   const [promptTypeFromCheckIn, setPromptTypeFromCheckIn] = useState<string | undefined>(undefined);
   const [streakCount, setStreakCount] = useState(0);
@@ -67,16 +68,13 @@ const JournalPage = () => {
       setMoodFromCheckIn(state.mood);
       setPromptTypeFromCheckIn(state.promptType);
       
-      // If we have a mood from check-in, automatically show the journal entry modal
-      setShowEntryModal(true);
+      // If we have a mood from check-in, automatically set the active view to voice
+      setActiveView('voice');
       
       // Clear the location state to prevent reopening on refresh
       window.history.replaceState({}, document.title);
       
-      // Set the active view to prompts if coming from a check-in
-      setActiveView('prompts');
-      
-      toast(`Ready to write about how you're feeling ${state.mood.toLowerCase()}?`);
+      toast(`Ready to journal about how you're feeling ${state.mood.toLowerCase()}?`);
     }
   }, [state]);
 
@@ -153,15 +151,28 @@ const JournalPage = () => {
               >
                 Prompts
               </Button>
+              <Button
+                variant={activeView === 'voice' ? 'default' : 'ghost'}
+                onClick={() => setActiveView('voice')} 
+                className="flex-1 font-normal"
+              >
+                <MessageCircle className="h-4 w-4 mr-1" />
+                Chat
+              </Button>
             </div>
             
             {/* Active Content */}
             <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6 min-h-[50vh] transition-all">
               {activeView === 'canvas' ? (
                 <JournalCanvas onEntrySaved={handleJournalEntryComplete} />
-              ) : (
+              ) : activeView === 'prompts' ? (
                 <JournalPrompts 
                   initialCategory={promptTypeFromCheckIn} 
+                  onEntrySaved={handleJournalEntryComplete}
+                />
+              ) : (
+                <VoiceJournal
+                  initialMood={moodFromCheckIn}
                   onEntrySaved={handleJournalEntryComplete}
                 />
               )}

@@ -1,19 +1,50 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import PageContainer from '@/components/layout/PageContainer';
 import VoiceButton from '@/components/ui/VoiceButton';
 import { toast } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
+interface LocationState {
+  mood?: string;
+}
+
 const VoiceInteractionPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as LocationState;
   const [isListening, setIsListening] = useState(false);
-  const [conversation, setConversation] = useState<{sender: string, text: string}[]>([
-    { sender: 'ai', text: 'Hi, I\'m your AI Sleep Genie. How can I help you sleep better tonight?' }
-  ]);
+  const [conversation, setConversation] = useState<{sender: string, text: string}[]>([]);
   const [isThinking, setIsThinking] = useState(false);
+
+  // Initialize conversation based on mood if coming from check-in
+  useEffect(() => {
+    let initialMessage = 'Hi, I\'m your AI Sleep Genie. How can I help you sleep better tonight?';
+    
+    if (state?.mood) {
+      switch(state.mood.toLowerCase()) {
+        case 'tired':
+        case 'sleepy':
+          initialMessage = 'I notice you\'re feeling tired. What\'s been affecting your energy today?';
+          break;
+        case 'sad':
+          initialMessage = 'I see you\'re feeling sad. Would you like to talk about what\'s on your mind?';
+          break;
+        case 'upset':
+          initialMessage = 'I understand you\'re feeling upset. Is there something specific that happened today?';
+          break;
+        case 'happy':
+          initialMessage = 'It\'s great to hear you\'re feeling happy! What made your day special?';
+          break;
+        default:
+          break;
+      }
+    }
+    
+    setConversation([{ sender: 'ai', text: initialMessage }]);
+  }, [state]);
 
   const handleStartListening = () => {
     setIsListening(true);
@@ -55,7 +86,7 @@ const VoiceInteractionPage = () => {
         <Button 
           variant="ghost" 
           size="icon" 
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate('/app/dashboard')}
           className="mr-2"
         >
           <ArrowLeft className="h-5 w-5" />
