@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Moon, MessageCircle, Music } from 'lucide-react';
+import { Moon, MessageCircle, Music, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const BottomNav = () => {
@@ -24,6 +24,11 @@ const BottomNav = () => {
       icon: Music,
       path: "/app/sleep-cast",
     },
+    {
+      label: "Journal",
+      icon: BookOpen,
+      path: "/app/journal",
+    }
   ];
 
   return (

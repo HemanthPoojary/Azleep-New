@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import SleepCastPage from "./pages/SleepCastPage";
 import DailyCheckInPage from "./pages/DailyCheckInPage";
 import LandingPage from "./pages/LandingPage";
+import JournalPage from "./pages/JournalPage";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/app/check-in" element={<DailyCheckInPage />} />
           <Route path="/app/sleep-cast" element={<SleepCastPage />} />
           <Route path="/app/stats" element={<StatsPage />} />
+          <Route path="/app/journal" element={<JournalPage />} />
           
           {/* Legacy routes for backward compatibility */}
           <Route path="/onboarding" element={<Navigate to="/app/onboarding" />} />
@@ -40,6 +42,7 @@ const App = () => (
           <Route path="/voice" element={<Navigate to="/app/check-in" />} />
           <Route path="/sleep-cast" element={<Navigate to="/app/sleep-cast" />} />
           <Route path="/stats" element={<Navigate to="/app/stats" />} />
+          <Route path="/journal" element={<Navigate to="/app/journal" />} />
           
           {/* Redirect old voice route to check-in */}
           <Route path="/app/voice" element={<Navigate to="/app/check-in" />} />
