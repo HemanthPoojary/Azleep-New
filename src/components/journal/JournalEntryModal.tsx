@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,8 @@ import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/sonner';
 import { BookOpen, Headphones, MessageCircle, Mic, ImageIcon } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Mood options for journal entry
 const moodOptions = [
@@ -24,16 +26,60 @@ const moodOptions = [
 interface JournalEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialMood?: string;
 }
 
-export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({ isOpen, onClose }) => {
+export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({ 
+  isOpen, 
+  onClose,
+  initialMood
+}) => {
   const [entryType, setEntryType] = useState<'text' | 'voice' | 'image'>('text');
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const { user } = useAuth();
   
-  const handleSave = () => {
+  // Set initial mood when provided from check-in
+  useEffect(() => {
+    if (initialMood && isOpen) {
+      // Find closest matching mood in our options
+      const matchingMood = moodOptions.find(m => 
+        m.name.toLowerCase() === initialMood.toLowerCase()
+      );
+      
+      if (matchingMood) {
+        setSelectedMood(matchingMood.name);
+      } else if (initialMood === "Sleepy") {
+        setSelectedMood("Tired");
+      } else if (initialMood === "Upset") {
+        setSelectedMood("Anxious");
+      } else {
+        // Default fallback
+        setSelectedMood("Reflective");
+      }
+      
+      // Set a title suggestion based on mood
+      setTitle(`How I'm feeling ${initialMood.toLowerCase()} tonight`);
+      
+      // Suggest some content based on mood
+      let moodPrompt = "";
+      if (initialMood === "Happy") {
+        moodPrompt = "Today I'm feeling happy because...";
+      } else if (initialMood === "Tired" || initialMood === "Sleepy") {
+        moodPrompt = "I'm feeling tired today. What contributed to this was...";
+      } else if (initialMood === "Sad") {
+        moodPrompt = "I'm feeling sad about...";
+      } else if (initialMood === "Upset") {
+        moodPrompt = "I'm feeling upset because...";
+      }
+      
+      setContent(moodPrompt);
+    }
+  }, [initialMood, isOpen]);
+  
+  const handleSave = async () => {
     if (!content.trim()) {
       toast("Please add some content to your journal entry");
       return;
@@ -44,10 +90,31 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({ isOpen, on
       return;
     }
     
-    // Here we would save the entry to a database
-    toast("Journal entry saved successfully!");
-    resetForm();
-    onClose();
+    if (!user) {
+      toast("You must be logged in to save a journal entry");
+      return;
+    }
+    
+    try {
+      // Save to Supabase
+      const { error } = await supabase
+        .from('journal_entries')
+        .insert({
+          user_id: user.id,
+          title: title || `Journal entry - ${new Date().toLocaleDateString()}`,
+          content,
+          mood: selectedMood
+        });
+        
+      if (error) throw error;
+      
+      toast("Journal entry saved successfully!");
+      resetForm();
+      onClose();
+    } catch (error) {
+      console.error('Error saving journal entry:', error);
+      toast("Failed to save journal entry. Please try again.");
+    }
   };
   
   const resetForm = () => {

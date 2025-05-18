@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import PageContainer from '@/components/layout/PageContainer';
 import { JournalCanvas } from '@/components/journal/JournalCanvas';
 import { JournalPrompts } from '@/components/journal/JournalPrompts';
@@ -9,12 +9,41 @@ import { JournalEntryModal } from '@/components/journal/JournalEntryModal';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PenLine, BookOpen } from 'lucide-react';
+import { toast } from '@/components/ui/sonner';
+
+interface LocationState {
+  mood?: string;
+  promptType?: string;
+}
 
 const JournalPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as LocationState;
   const isMobile = useIsMobile();
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [activeView, setActiveView] = useState<'canvas' | 'prompts'>('canvas');
+  const [moodFromCheckIn, setMoodFromCheckIn] = useState<string | undefined>(undefined);
+  const [promptTypeFromCheckIn, setPromptTypeFromCheckIn] = useState<string | undefined>(undefined);
+
+  // Handle navigation state for mood and prompt type
+  useEffect(() => {
+    if (state?.mood) {
+      setMoodFromCheckIn(state.mood);
+      setPromptTypeFromCheckIn(state.promptType);
+      
+      // If we have a mood from check-in, automatically show the journal entry modal
+      setShowEntryModal(true);
+      
+      // Clear the location state to prevent reopening on refresh
+      window.history.replaceState({}, document.title);
+      
+      // Set the active view to prompts if coming from a check-in
+      setActiveView('prompts');
+      
+      toast(`Ready to write about how you're feeling ${state.mood.toLowerCase()}?`);
+    }
+  }, [state]);
 
   return (
     <PageContainer className="bg-gradient-sleep overflow-hidden">
@@ -67,7 +96,7 @@ const JournalPage = () => {
               {activeView === 'canvas' ? (
                 <JournalCanvas />
               ) : (
-                <JournalPrompts />
+                <JournalPrompts initialCategory={promptTypeFromCheckIn} />
               )}
             </div>
           </div>
@@ -84,6 +113,7 @@ const JournalPage = () => {
         <JournalEntryModal 
           isOpen={showEntryModal} 
           onClose={() => setShowEntryModal(false)}
+          initialMood={moodFromCheckIn}
         />
       </div>
     </PageContainer>

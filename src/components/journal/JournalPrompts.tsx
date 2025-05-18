@@ -1,10 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/sonner';
 import { BookOpen, Heart, Star, RefreshCcw } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Prompt categories
 const promptCategories = [
@@ -42,11 +44,86 @@ const promptsByCategory = {
   ],
 };
 
-export const JournalPrompts = () => {
+// Mood-specific prompts
+const moodPrompts = {
+  "Happy": [
+    "What made you feel happy today? Describe the experience in detail.",
+    "How can you carry this happiness into your sleep and tomorrow?",
+    "When was the last time you felt this good? What similarities do you notice?",
+  ],
+  "Tired": [
+    "What factors contributed to your tiredness today?",
+    "How might you adjust your schedule tomorrow to prevent feeling this way?",
+    "What would help you feel more rested right now?",
+  ],
+  "Sad": [
+    "What's weighing on your mind tonight?",
+    "What small comfort could you give yourself right now?",
+    "Is there someone you could reach out to who might understand how you feel?",
+  ],
+  "Upset": [
+    "What triggered these feelings of upset today?",
+    "How might viewing this situation differently change how you feel?",
+    "What boundaries might need to be set to prevent similar feelings in the future?",
+  ],
+  "Sleepy": [
+    "What helped you feel relaxed and ready for sleep tonight?",
+    "What's your ideal bedtime routine? Are you following it?",
+    "How can you make your sleep environment more conducive to rest?",
+  ],
+};
+
+interface JournalPromptsProps {
+  initialCategory?: string;
+}
+
+export const JournalPrompts: React.FC<JournalPromptsProps> = ({ initialCategory }) => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [currentPrompt, setCurrentPrompt] = useState<string | null>(null);
   const [response, setResponse] = useState('');
   const [savedResponses, setSavedResponses] = useState<Array<{prompt: string, response: string, date: string}>>([]);
+  const { user } = useAuth();
+  
+  // Set initial category from props (from check-in page)
+  useEffect(() => {
+    if (initialCategory && promptsByCategory[initialCategory as keyof typeof promptsByCategory]) {
+      selectPrompt(initialCategory);
+    }
+  }, [initialCategory]);
+
+  // Load previously saved journal entries from database
+  useEffect(() => {
+    if (user) {
+      fetchSavedJournalEntries();
+    }
+  }, [user]);
+
+  const fetchSavedJournalEntries = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('journal_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+        
+      if (error) throw error;
+      
+      if (data) {
+        const formattedEntries = data.map(entry => ({
+          prompt: entry.title || "Untitled entry",
+          response: entry.content,
+          date: new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        }));
+        
+        setSavedResponses(formattedEntries);
+      }
+    } catch (error) {
+      console.error('Error fetching journal entries:', error);
+    }
+  };
   
   const selectPrompt = (category: string) => {
     const prompts = promptsByCategory[category as keyof typeof promptsByCategory];
@@ -68,23 +145,45 @@ export const JournalPrompts = () => {
     }
   };
   
-  const saveResponse = () => {
-    if (!response.trim() || !currentPrompt) {
+  const saveResponse = async () => {
+    if (!response.trim() || !currentPrompt || !user) {
       toast("Please write a response first");
       return;
     }
     
-    const newSavedResponse = {
-      prompt: currentPrompt,
-      response: response,
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    };
-    
-    setSavedResponses([newSavedResponse, ...savedResponses]);
-    setResponse('');
-    setCurrentPrompt(null);
-    setSelectedCategory(null);
-    toast("Your reflection has been saved");
+    try {
+      // Save to Supabase
+      const { data, error } = await supabase
+        .from('journal_entries')
+        .insert({
+          user_id: user.id,
+          title: currentPrompt,
+          content: response,
+          mood: selectedCategory === 'gratitude' ? 'Happy' : 
+                selectedCategory === 'reflect' ? 'Reflective' : 
+                selectedCategory === 'dream' ? 'Dreamy' : 'Neutral'
+        })
+        .select();
+      
+      if (error) throw error;
+      
+      // Update UI
+      const newSavedResponse = {
+        prompt: currentPrompt,
+        response: response,
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      };
+      
+      setSavedResponses([newSavedResponse, ...savedResponses]);
+      setResponse('');
+      setCurrentPrompt(null);
+      setSelectedCategory(null);
+      
+      toast("Your reflection has been saved");
+    } catch (error) {
+      console.error('Error saving journal entry:', error);
+      toast("Failed to save your entry. Please try again.");
+    }
   };
   
   return (

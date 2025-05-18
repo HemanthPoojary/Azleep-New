@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageContainer from '@/components/layout/PageContainer';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { Moon, BookOpen, Headphones, MessageCircle, Heart, Star, Cloud } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Emojis and their corresponding moods
 const moods = [
@@ -33,7 +35,8 @@ const moodSuggestions = {
     {
       text: "Note your positive thoughts in the journal",
       icon: BookOpen,
-      action: "#",
+      action: "/app/journal",
+      params: { mood: "Happy", promptType: "gratitude" }
     },
   ],
   // Tired mood suggestions
@@ -69,7 +72,8 @@ const moodSuggestions = {
     {
       text: "Write your thoughts in your journal",
       icon: BookOpen,
-      action: "#",
+      action: "/app/journal",
+      params: { mood: "Sad", promptType: "reflect" }
     },
   ],
   // Upset mood suggestions
@@ -105,7 +109,8 @@ const moodSuggestions = {
     {
       text: "Record your bedtime in your sleep log",
       icon: BookOpen,
-      action: "#",
+      action: "/app/journal",
+      params: { mood: "Sleepy", promptType: "dream" }
     },
   ],
   // Default suggestions if no mood is selected
@@ -123,7 +128,7 @@ const moodSuggestions = {
     {
       text: "Write your thoughts in your journal",
       icon: BookOpen,
-      action: "#",
+      action: "/app/journal",
     },
   ]
 };
@@ -131,15 +136,40 @@ const moodSuggestions = {
 const DailyCheckInPage = () => {
   const navigate = useNavigate();
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
+  const { user } = useAuth();
   
-  const handleMoodSelect = (index: number) => {
+  const handleMoodSelect = async (index: number) => {
     setSelectedMood(index);
-    toast(`You're feeling ${moods[index].name} tonight`);
+    const selectedMoodName = moods[index].name;
+    toast(`You're feeling ${selectedMoodName} tonight`);
+    
+    // Save the mood selection to the database
+    if (user) {
+      try {
+        const { error } = await supabase
+          .from('mood_records')
+          .insert({
+            user_id: user.id,
+            mood: selectedMoodName,
+            notes: `Daily check-in: ${selectedMoodName}`
+          });
+        
+        if (error) throw error;
+      } catch (error) {
+        console.error('Error saving mood:', error);
+      }
+    }
   };
 
-  const handleSuggestionClick = (path: string) => {
+  const handleSuggestionClick = (suggestion: any) => {
+    const path = suggestion.action;
     if (path.startsWith('/')) {
-      navigate(path);
+      // If there are params to pass (for journal entries)
+      if (suggestion.params) {
+        navigate(path, { state: suggestion.params });
+      } else {
+        navigate(path);
+      }
     } else {
       toast("This feature is coming soon!");
     }
@@ -209,7 +239,7 @@ const DailyCheckInPage = () => {
                 <Button
                   key={index}
                   variant="outline"
-                  onClick={() => handleSuggestionClick(suggestion.action)}
+                  onClick={() => handleSuggestionClick(suggestion)}
                   className="w-full py-6 bg-white/5 border-white/10 hover:bg-white/10 text-left justify-start text-lg"
                 >
                   <suggestion.icon className="mr-3 h-6 w-6" />
