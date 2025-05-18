@@ -22,6 +22,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({ appUrl }) => {
     }
   };
 
+  // Google Form URL for the waitlist
+  const waitlistFormUrl = "https://docs.google.com/forms/d/1JsgB8-uNH6fjo3E4DNtFUiaojHnEL5SmkBfo0DjT-5Q/viewform";
+
   return (
     <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#2C3E50] to-[#8E44AD] p-6">
       {/* Animated stars background */}
@@ -58,6 +61,12 @@ const HeroSection: React.FC<HeroSectionProps> = ({ appUrl }) => {
               Start Now
             </Button>
           </Link>
+          
+          <a href={waitlistFormUrl} target="_blank" rel="noopener noreferrer">
+            <Button size="lg" className="text-lg h-12 px-8 w-full md:w-auto bg-purple-700 text-white hover:bg-purple-800 shadow-md hover:shadow-lg transition-all duration-300">
+              Join Waitlist
+            </Button>
+          </a>
           
           <Button onClick={toggleAudio} variant="outline" size="lg" className={`text-lg h-12 px-8 w-full md:w-auto border-white text-white hover:bg-white/10 ${isAudioPlaying ? 'bg-white/20' : ''}`}>
             {isAudioPlaying ? 'Stop' : 'Try a Mini Sleep Cast'}
