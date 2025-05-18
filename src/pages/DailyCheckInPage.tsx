@@ -38,13 +38,7 @@ const DailyCheckInPage = () => {
   const navigate = useNavigate();
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
   
-  // Get time of day for greeting
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 18) return "Good afternoon";
-    return "Good evening";
-  };
+  // Removed the getGreeting function since we're using hardcoded text
 
   const handleMoodSelect = (index: number) => {
     setSelectedMood(index);
@@ -68,7 +62,7 @@ const DailyCheckInPage = () => {
             <Moon className="h-8 w-8 text-purple-300" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-white">{getGreeting()}</h1>
+            <h1 className="text-3xl font-bold text-white">Good Evening</h1>
             <p className="text-lg text-gray-400">Ready for a good night's sleep?</p>
           </div>
         </div>
