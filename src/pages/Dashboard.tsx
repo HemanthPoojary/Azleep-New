@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Moon, Mic, Music, BarChart, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -40,11 +39,14 @@ const mockData = [
   { day: 'Sun', sleepHours: 7.0, stressLevel: 52 },
 ];
 
+// Session storage key for sleep questions
+const SLEEP_QUESTIONS_KEY = 'azleep_sleep_questions_answered';
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [showNudge, setShowNudge] = useState(false);
   const [relaxPoints, setRelaxPoints] = useState(42);
-  const [showSleepQuestions, setShowSleepQuestions] = useState(true);
+  const [showSleepQuestions, setShowSleepQuestions] = useState(false);
   const [sleepHours, setSleepHours] = useState<string>("8");
   const [sleepQuality, setSleepQuality] = useState<string>("good");
   const userName = "User";
@@ -57,6 +59,14 @@ const Dashboard = () => {
     if (hour < 18) return "Good Afternoon";
     return "Good Evening";
   };
+  
+  // Check if sleep questions need to be shown (once per session)
+  useEffect(() => {
+    const hasAnsweredQuestions = sessionStorage.getItem(SLEEP_QUESTIONS_KEY);
+    if (!hasAnsweredQuestions) {
+      setShowSleepQuestions(true);
+    }
+  }, []);
   
   const handleStillAwake = () => {
     setShowNudge(true);
@@ -71,6 +81,8 @@ const Dashboard = () => {
   const handleSleepQuestionsSubmit = () => {
     toast.success("Thanks for sharing your sleep data!");
     setShowSleepQuestions(false);
+    // Mark sleep questions as answered for this session
+    sessionStorage.setItem(SLEEP_QUESTIONS_KEY, 'true');
   };
 
   return (
@@ -93,7 +105,7 @@ const Dashboard = () => {
         <AlertDialog open={showSleepQuestions} onOpenChange={setShowSleepQuestions}>
           <AlertDialogContent className="bg-gradient-to-br from-azleep-dark to-azleep-primary/30 border-white/10 max-w-md">
             <AlertDialogHeader>
-              <AlertDialogTitle className="text-azleep-text text-xl mb-2">Good Morning Sleepyhead! 😴</AlertDialogTitle>
+              <AlertDialogTitle className="text-azleep-text text-xl mb-2">{getGreeting()} Sleepyhead! 😴</AlertDialogTitle>
               <AlertDialogDescription className="text-base text-gray-300">
                 Let's track your sleep to help you rest better tonight!
               </AlertDialogDescription>
