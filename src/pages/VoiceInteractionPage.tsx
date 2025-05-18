@@ -6,6 +6,8 @@ import VoiceButton from '@/components/ui/VoiceButton';
 import { toast } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface LocationState {
   mood?: string;
@@ -18,6 +20,7 @@ const VoiceInteractionPage = () => {
   const [isListening, setIsListening] = useState(false);
   const [conversation, setConversation] = useState<{sender: string, text: string}[]>([]);
   const [isThinking, setIsThinking] = useState(false);
+  const { user } = useAuth();
 
   // Initialize conversation based on mood if coming from check-in
   useEffect(() => {
@@ -66,7 +69,7 @@ const VoiceInteractionPage = () => {
     
     // Simulate AI thinking and response
     setIsThinking(true);
-    setTimeout(() => {
+    setTimeout(async () => {
       const aiResponses = [
         "I understand that falling asleep can be challenging. Try the 4-7-8 breathing technique: inhale for 4 seconds, hold for 7 seconds, and exhale for 8 seconds. This helps calm your nervous system.",
         "Work stress can definitely affect your sleep. Consider writing down your worries before bed to clear your mind. Would you like me to guide you through a quick relaxation exercise?",
@@ -76,8 +79,45 @@ const VoiceInteractionPage = () => {
       const randomAiResponse = aiResponses[Math.floor(Math.random() * aiResponses.length)];
       
       setConversation(prev => [...prev, { sender: 'ai', text: randomAiResponse }]);
+      
+      // Save conversation to the database if user is logged in
+      if (user && state?.mood) {
+        try {
+          await saveMoodInteraction(randomUserMessage, randomAiResponse, state.mood);
+        } catch (error) {
+          console.error("Failed to save interaction:", error);
+        }
+      }
+      
       setIsThinking(false);
     }, 2000);
+  };
+
+  // Function to save the interaction to the database
+  const saveMoodInteraction = async (userMessage: string, aiResponse: string, mood: string) => {
+    if (!user) return;
+    
+    try {
+      console.log("Saving mood interaction:", { userMessage, aiResponse, mood });
+      
+      // Save to mood_records table
+      const { error } = await supabase
+        .from('mood_records')
+        .insert({
+          user_id: user.id,
+          mood: mood,
+          notes: `User: ${userMessage}\nAI: ${aiResponse}`,
+          voice_analysis_data: { conversation: true }
+        });
+      
+      if (error) {
+        console.error('Error saving mood record:', error);
+        throw error;
+      }
+      
+    } catch (error) {
+      console.error('Error saving interaction:', error);
+    }
   };
 
   return (

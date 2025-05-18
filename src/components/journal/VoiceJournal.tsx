@@ -111,10 +111,19 @@ const VoiceJournal: React.FC<VoiceJournalProps> = ({ initialMood, onEntrySaved }
       // Save the conversation entry if user is logged in
       if (user) {
         try {
-          await saveJournalEntry(userMessage);
+          const success = await saveJournalEntry(userMessage);
+          if (success && onEntrySaved) {
+            onEntrySaved();
+          }
         } catch (error) {
           console.error("Error saving journal entry:", error);
+          toast.error("Could not save your journal entry. Please try again.");
         }
+      } else {
+        console.log("User not logged in, cannot save journal entry");
+        toast("Sign in to save your journal entries", {
+          description: "Your entries won't be saved until you log in"
+        });
       }
       
       setIsLoading(false);
@@ -148,10 +157,14 @@ const VoiceJournal: React.FC<VoiceJournalProps> = ({ initialMood, onEntrySaved }
   };
 
   const saveJournalEntry = async (content: string) => {
-    if (!user || !content.trim()) return;
+    if (!user || !content.trim()) return false;
     
     try {
-      const { error } = await supabase
+      console.log("Attempting to save journal entry for user:", user.id);
+      console.log("Content:", content.substring(0, 20) + "...");
+      console.log("Mood:", initialMood || 'Reflective');
+      
+      const { error, data } = await supabase
         .from('journal_entries')
         .insert({
           user_id: user.id,
@@ -160,14 +173,19 @@ const VoiceJournal: React.FC<VoiceJournalProps> = ({ initialMood, onEntrySaved }
           title: `Journal conversation - ${new Date().toLocaleDateString()}`
         });
       
-      if (error) throw error;
-      
-      if (onEntrySaved) {
-        onEntrySaved();
+      if (error) {
+        console.error('Supabase error details:', error);
+        toast.error("Could not save journal entry: " + error.message);
+        return false;
       }
+      
+      console.log("Journal entry saved successfully:", data);
+      toast.success("Journal entry saved successfully!");
+      return true;
     } catch (error) {
       console.error('Error saving journal entry:', error);
-      toast("Failed to save your journal entry");
+      toast.error("Failed to save your journal entry");
+      return false;
     }
   };
 

@@ -101,8 +101,13 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
     setIsLoading(true);
     
     try {
+      console.log("Saving journal entry for user:", user.id);
+      console.log("Title:", title);
+      console.log("Content:", content.substring(0, 20) + "...");
+      console.log("Mood:", selectedMood);
+      
       // Save to Supabase
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('journal_entries')
         .insert({
           user_id: user.id,
@@ -111,20 +116,25 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
           mood: selectedMood
         });
         
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error details:', error);
+        throw error;
+      }
+      
+      console.log("Journal entry saved successfully:", data);
       
       // Call the callback to update points/streak
       if (onEntrySaved) {
         onEntrySaved();
       } else {
-        toast("Journal entry saved successfully!");
+        toast.success("Journal entry saved successfully!");
       }
       
       resetForm();
       onClose();
     } catch (error) {
       console.error('Error saving journal entry:', error);
-      toast("Failed to save journal entry. Please try again.");
+      toast.error("Failed to save journal entry. Please try again.");
     } finally {
       setIsLoading(false);
     }
