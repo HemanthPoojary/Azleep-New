@@ -92,47 +92,7 @@ const Dashboard = () => {
           </Button>
         </div>
         
-        {/* Navigation section */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Quick Navigation</h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            <Button 
-              variant="default" 
-              className="flex items-center justify-between"
-              onClick={() => navigate('/app/stats')}
-            >
-              <div className="flex items-center">
-                <BarChart className="h-5 w-5 mr-2" />
-                <span>View Sleep Stats</span>
-              </div>
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-            
-            <Button 
-              variant="default" 
-              className="flex items-center justify-between"
-              onClick={() => navigate('/app/voice')}
-            >
-              <div className="flex items-center">
-                <Mic className="h-5 w-5 mr-2" />
-                <span>Voice Assistant</span>
-              </div>
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-            
-            <Button 
-              variant="default" 
-              className="flex items-center justify-between"
-              onClick={() => navigate('/app/sleep-cast')}
-            >
-              <div className="flex items-center">
-                <Music className="h-5 w-5 mr-2" />
-                <span>Sleep Casts</span>
-              </div>
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          </div>
-        </div>
+        {/* Navigation section removed */}
         
         <div className="mt-8 max-w-md mx-auto md:mx-0">
           <div className="flex justify-between mb-2">
