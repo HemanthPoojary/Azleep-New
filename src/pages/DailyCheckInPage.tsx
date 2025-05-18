@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import PageContainer from '@/components/layout/PageContainer';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
-import { Moon, BookOpen, Headphones, MessageCircle } from 'lucide-react';
+import { Moon, BookOpen, Headphones, MessageCircle, Heart, Star, Cloud } from 'lucide-react';
 
 // Emojis and their corresponding moods
 const moods = [
@@ -15,24 +15,117 @@ const moods = [
   { emoji: "😴", name: "Sleepy", color: "bg-indigo-500" },
 ];
 
-// Suggestions based on user's mood
-const suggestions = [
-  {
-    text: "Talk to Sleep Genie about your feelings",
-    icon: MessageCircle,
-    action: "/app/voice",
-  },
-  {
-    text: "Listen to comforting rain sounds",
-    icon: Headphones,
-    action: "/app/sleep-cast",
-  },
-  {
-    text: "Write your thoughts in your journal",
-    icon: BookOpen,
-    action: "#",
-  },
-];
+// Dynamic suggestions based on user's mood
+const moodSuggestions = {
+  // Happy mood suggestions
+  "Happy": [
+    {
+      text: "Enjoy calming meditation before sleep",
+      icon: Star,
+      action: "/app/sleep-cast",
+    },
+    {
+      text: "Listen to gentle piano music",
+      icon: Headphones,
+      action: "/app/sleep-cast",
+    },
+    {
+      text: "Note your positive thoughts in the journal",
+      icon: BookOpen,
+      action: "#",
+    },
+  ],
+  // Tired mood suggestions
+  "Tired": [
+    {
+      text: "Try a guided power nap meditation",
+      icon: Cloud,
+      action: "/app/sleep-cast",
+    },
+    {
+      text: "Listen to white noise sounds",
+      icon: Headphones,
+      action: "/app/sleep-cast",
+    },
+    {
+      text: "Talk to Sleep Genie about your day",
+      icon: MessageCircle,
+      action: "/app/voice",
+    },
+  ],
+  // Sad mood suggestions
+  "Sad": [
+    {
+      text: "Talk to Sleep Genie about your feelings",
+      icon: MessageCircle,
+      action: "/app/voice",
+    },
+    {
+      text: "Listen to uplifting sleep stories",
+      icon: Headphones,
+      action: "/app/sleep-cast",
+    },
+    {
+      text: "Write your thoughts in your journal",
+      icon: BookOpen,
+      action: "#",
+    },
+  ],
+  // Upset mood suggestions
+  "Upset": [
+    {
+      text: "Try a guided anger release meditation",
+      icon: Cloud,
+      action: "/app/sleep-cast",
+    },
+    {
+      text: "Listen to calming nature sounds",
+      icon: Headphones,
+      action: "/app/sleep-cast",
+    },
+    {
+      text: "Talk to Sleep Genie about what's bothering you",
+      icon: MessageCircle,
+      action: "/app/voice",
+    },
+  ],
+  // Sleepy mood suggestions
+  "Sleepy": [
+    {
+      text: "Listen to a sleep story",
+      icon: Headphones,
+      action: "/app/sleep-cast",
+    },
+    {
+      text: "Try a deep sleep meditation",
+      icon: Cloud,
+      action: "/app/sleep-cast",
+    },
+    {
+      text: "Record your bedtime in your sleep log",
+      icon: BookOpen,
+      action: "#",
+    },
+  ],
+  // Default suggestions if no mood is selected
+  "default": [
+    {
+      text: "Talk to Sleep Genie about your feelings",
+      icon: MessageCircle,
+      action: "/app/voice",
+    },
+    {
+      text: "Listen to comforting rain sounds",
+      icon: Headphones,
+      action: "/app/sleep-cast",
+    },
+    {
+      text: "Write your thoughts in your journal",
+      icon: BookOpen,
+      action: "#",
+    },
+  ]
+};
 
 const DailyCheckInPage = () => {
   const navigate = useNavigate();
@@ -51,6 +144,15 @@ const DailyCheckInPage = () => {
     } else {
       toast("This feature is coming soon!");
     }
+  };
+
+  // Get the appropriate suggestions based on selected mood
+  const getCurrentSuggestions = () => {
+    if (selectedMood === null) {
+      return moodSuggestions.default;
+    }
+    const moodName = moods[selectedMood].name;
+    return moodSuggestions[moodName as keyof typeof moodSuggestions];
   };
 
   return (
@@ -90,12 +192,12 @@ const DailyCheckInPage = () => {
           </div>
         </div>
         
-        {/* Suggestions */}
+        {/* Suggestions - now dynamic based on mood */}
         <div className="mb-8">
           <h2 className="text-2xl font-semibold mb-6">Suggested for you</h2>
           
           <div className="space-y-4">
-            {suggestions.map((suggestion, index) => (
+            {getCurrentSuggestions().map((suggestion, index) => (
               <Button
                 key={index}
                 variant="outline"
