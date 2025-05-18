@@ -1,25 +1,37 @@
 
 import React from 'react';
-import { Moon } from 'lucide-react';
+import { Moon, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Logo: React.FC<{ className?: string }> = ({ className = '' }) => {
   return (
     <Link to="/" className={`flex items-center gap-2 ${className}`}>
       <div className="relative">
-        {/* Tilted moon for sleeping appearance */}
+        {/* Gold moon */}
         <div className="relative">
           <Moon 
-            className="text-[#9b87f5] h-6 w-6 md:h-8 md:w-8 transform rotate-90" 
+            className="text-yellow-400 h-6 w-6 md:h-8 md:w-8" 
             strokeWidth={1.5}
+            fill="#f9d342"
           />
-          {/* "Z" character to represent sleeping */}
-          <div className="absolute top-0 right-0 text-white text-xs md:text-sm font-bold">Z</div>
-          <div className="absolute top-2 right-2 text-white text-xs md:text-sm font-bold opacity-70">z</div>
-          <div className="absolute top-4 right-4 text-white text-xs md:text-sm font-bold opacity-40">z</div>
+          {/* Small star */}
+          <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-1">
+            <Star className="h-3 w-3 md:h-4 md:w-4 text-white" strokeWidth={1.5} />
+          </div>
+          {/* Z letters floating above */}
+          <div className="absolute -top-4 -right-2 flex flex-col items-end">
+            <div className="flex">
+              <span className="text-xs md:text-sm font-bold text-purple-400">z</span>
+              <span className="text-xs md:text-sm font-bold text-purple-400 ml-1">z</span>
+            </div>
+            <div className="flex mt-px">
+              <span className="text-xs md:text-sm font-bold text-purple-400">z</span>
+              <span className="text-xs md:text-sm font-bold text-purple-400 ml-1">z</span>
+            </div>
+          </div>
         </div>
       </div>
-      <span className="font-bold text-xl md:text-2xl text-white">Azleep</span>
+      <span className="font-bold text-xl md:text-2xl text-purple-400">azleep</span>
     </Link>
   );
 };
