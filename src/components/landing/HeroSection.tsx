@@ -70,7 +70,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
             </Button>
           </div>
           
-          <audio ref={audioRef} src="https://placeholder-url.com/sleepcast-demo.mp3" onEnded={() => setIsAudioPlaying(false)} />
+          <audio ref={audioRef} src="/mini-sleep-cast.mp3" onEnded={() => setIsAudioPlaying(false)} />
         </div>
       </div>
     </section>;

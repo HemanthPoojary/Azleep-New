@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -18,10 +17,7 @@ const StepCard: React.FC<StepCardProps> = ({ number, title, description, image }
     </div>
     <div className="rounded-xl overflow-hidden mb-4 w-full max-w-xs">
       <AspectRatio ratio={16 / 9}>
-        <div className="w-full h-full bg-gray-700 flex items-center justify-center">
-          {/* Placeholder for image */}
-          <p className="text-gray-400">Image</p>
-        </div>
+        <img src={image} alt={title} className="w-full h-full object-cover" />
       </AspectRatio>
     </div>
     <h3 className="text-xl font-semibold mb-2 text-white">{title}</h3>
@@ -42,11 +38,11 @@ const HowItWorksSection: React.FC<HowItWorksSectionProps> = ({ appUrl }) => {
         </h2>
         
         <div className="flex flex-col md:flex-row gap-8 justify-center">
-          <StepCard number={1} title="Open Azleep Web App" description="No downloads required. Access instantly from any browser." image="https://placeholder-url.com/browser-mockup.jpg" />
+          <StepCard number={1} title="Open Azleep Web App" description="No downloads required. Access instantly from any browser." image="/Open Azleep Web App.png" />
           
-          <StepCard number={2} title="Chat with AI Sleep Genie" description="Speak naturally and get personalized sleep guidance." image="https://placeholder-url.com/microphone-image.jpg" />
+          <StepCard number={2} title="Chat with AI Sleep Genie" description="Speak naturally and get personalized sleep guidance." image="/Chat with AI Sleep Genie.png" />
           
-          <StepCard number={3} title="Rest Easy Tonight" description="Enjoy better sleep with AI-powered assistance." image="https://placeholder-url.com/starry-sky.jpg" />
+          <StepCard number={3} title="Rest Easy Tonight" description="Enjoy better sleep with AI-powered assistance." image="/Rest Easy Tonight.png" />
         </div>
         
         <div className="flex justify-center mt-12">

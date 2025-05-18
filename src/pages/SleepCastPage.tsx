@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Pause, Volume2, ArrowLeft, Moon, Star, CloudMoon, Waves, Snowflake } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,43 +11,56 @@ import SleepCastCard from '@/components/sleep/SleepCastCard';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 
 // Data for sleep casts
-const sleepCasts = [{
-  id: 'nature',
-  title: 'Nature Sounds',
-  description: 'Calming forest and river sounds',
-  duration: '45 min',
-  category: 'Nature'
-}, {
-  id: 'ocean',
-  title: 'Ocean Waves',
-  description: 'Peaceful waves and ocean ambience',
-  duration: '60 min',
-  category: 'Nature'
-}, {
-  id: 'tamil',
-  title: 'Tamil Folklore',
-  description: 'Traditional stories from Tamil Nadu',
-  duration: '30 min',
-  category: 'Stories'
-}, {
-  id: 'rain',
-  title: 'Rainy Night',
-  description: 'Gentle rain sounds with distant thunder',
-  duration: '50 min',
-  category: 'Nature'
-}, {
-  id: 'meadow',
-  title: 'Mountain Meadow',
-  description: 'Birds chirping and gentle breeze',
-  duration: '40 min',
-  category: 'Nature'
-}, {
-  id: 'meditation',
-  title: 'Guided Meditation',
-  description: 'Deep relaxation for mind and body',
-  duration: '20 min',
-  category: 'Meditation'
-}];
+const sleepCasts = [
+  {
+    id: 'meditation-music',
+    title: 'Meditation Music',
+    description: 'Relax and meditate with soothing melodies.',
+    duration: '39 min',
+    category: 'Meditation',
+    audioSrc: '/Meditation-Music.mp3',
+  },
+  {
+    id: 'mountain-flowers',
+    title: 'Mountain Flowers',
+    description: 'Gentle music inspired by mountain meadows.',
+    duration: '3.8 min',
+    category: 'Nature',
+    audioSrc: '/mountain-flowers.mp3',
+  },
+  {
+    id: 'relaxing-handpan',
+    title: 'Relaxing Handpan',
+    description: 'Calming handpan music for deep relaxation.',
+    duration: '5.3 min',
+    category: 'Music',
+    audioSrc: '/relaxing-handpan.mp3',
+  },
+  {
+    id: 'soft-piano-music',
+    title: 'Soft Piano Music',
+    description: 'Peaceful piano melodies to help you unwind.',
+    duration: '22 min',
+    category: 'Music',
+    audioSrc: '/soft-piano-music.mp3',
+  },
+  {
+    id: 'spiring-ocean-melodies',
+    title: 'Spiring Ocean Melodies',
+    description: 'Ocean-inspired music for restful sleep.',
+    duration: '4.8 min',
+    category: 'Nature',
+    audioSrc: '/spiring-ocean-melodies.mp3',
+  },
+  {
+    id: 'serene-meadow',
+    title: 'Serene Meadow',
+    description: 'Serene sounds of a peaceful meadow.',
+    duration: '8.4 min',
+    category: 'Nature',
+    audioSrc: '/serene-meadow.mp3',
+  },
+];
 
 const SleepCastPage = () => {
   const navigate = useNavigate();
@@ -58,6 +70,7 @@ const SleepCastPage = () => {
   const [recommendation, setRecommendation] = useState('Ocean Waves'); // Simulating a recommendation
   const [activeCategory, setActiveCategory] = useState('All');
   const isMobile = useIsMobile();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     // Simulate loading animation
@@ -68,9 +81,17 @@ const SleepCastPage = () => {
   }, []);
 
   const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
-    if (!isPlaying) {
-      toast(`Playing ${selectedCast.title}`);
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+      if (!isPlaying) {
+        toast(`Playing ${selectedCast.title}`);
+      }
     }
   };
 
@@ -80,11 +101,13 @@ const SleepCastPage = () => {
 
   const handleCastSelect = (cast: any) => {
     setSelectedCast(cast);
-    if (isPlaying) {
-      setIsPlaying(false);
-      setTimeout(() => setIsPlaying(true), 500);
-      toast(`Changing to ${cast.title}`);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
     }
+    setIsPlaying(false);
+    setTimeout(() => setIsPlaying(true), 500);
+    toast(`Changing to ${cast.title}`);
   };
 
   const handleCategorySelect = (category: string) => {
@@ -202,6 +225,12 @@ const SleepCastPage = () => {
                     >
                       {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-1" />}
                     </Button>
+                    <audio
+                      ref={audioRef}
+                      src={selectedCast.audioSrc}
+                      onEnded={() => setIsPlaying(false)}
+                      style={{ display: 'none' }}
+                    />
                   </div>
                 </AspectRatio>
               </div>
