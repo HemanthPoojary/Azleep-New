@@ -22,8 +22,8 @@ const SleepCastCard = ({
   onPlay,
 }: SleepCastProps) => {
   return (
-    <div className="sleep-card group hover:-translate-y-1 h-full flex flex-col">
-      <div className="mb-4 flex items-center gap-2">
+    <div className="sleep-card group hover:-translate-y-1 h-full flex flex-col p-5">
+      <div className="mb-3 flex items-center gap-2">
         <span className="rounded-full bg-azleep-accent/20 px-3 py-1 text-xs font-medium text-azleep-accent">
           {category}
         </span>

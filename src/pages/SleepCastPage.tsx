@@ -132,7 +132,7 @@ const SleepCastPage = () => {
         </div>
       </div>
 
-      <div className="max-w-full w-full mx-auto">
+      <div className="w-full mx-auto">
         <div className="px-4 py-4 mb-2 flex items-center">
           <Button variant="ghost" size="icon" onClick={() => navigate('/app/dashboard')} className="mr-2">
             <ArrowLeft className="h-5 w-5" />
@@ -140,9 +140,9 @@ const SleepCastPage = () => {
           <h1 className="text-xl font-bold text-azleep-text">Sleep Cast</h1>
         </div>
         
-        <div className="flex flex-col md:flex-row md:items-start md:justify-center gap-8 px-4 md:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row md:items-start gap-8 w-full px-2 sm:px-4">
           {/* Left column for player on larger screens */}
-          <div className="md:w-1/2 lg:w-2/5 xl:w-1/3 flex flex-col items-center">
+          <div className="md:w-1/2 lg:w-2/5 flex flex-col items-center">
             {/* Recommendation section - visual enhancement */}
             <div className="mb-6 w-full max-w-md mx-auto animate-fade-in">
               <div className="rounded-xl bg-white/10 backdrop-blur-md p-4 flex items-center border border-white/20 shadow-lg transform hover:scale-102 transition-all duration-300">
@@ -229,7 +229,7 @@ const SleepCastPage = () => {
           </div>
           
           {/* Right column for categories and list on larger screens */}
-          <div className="md:w-1/2 lg:w-3/5 xl:w-2/3">
+          <div className="md:w-1/2 lg:w-3/5">
             {/* Categories section - scrollable on mobile, grid on desktop */}
             <div className="mb-6">
               <div className="flex items-center justify-center md:justify-start gap-2 overflow-x-auto pb-2 no-scrollbar">
@@ -277,7 +277,7 @@ const SleepCastPage = () => {
             </div>
             
             {/* Sleep cast list section - enhanced grid layout */}
-            <div className="mb-20 md:mb-0">
+            <div className="mb-20 md:mb-0 px-2">
               <h2 className="text-lg font-semibold text-azleep-text mb-4 flex items-center">
                 <span className="bg-azleep-accent/30 rounded-full p-1 mr-2 inline-flex justify-center items-center">
                   <Star className="h-4 w-4 text-[#FBBF24]" />
@@ -285,8 +285,8 @@ const SleepCastPage = () => {
                 {activeCategory === 'All' ? 'All Sleep Casts' : `${activeCategory} Sleep Casts`}
               </h2>
               
-              {/* Desktop/tablet grid view */}
-              <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in">
+              {/* Desktop grid view - now using responsive grid columns */}
+              <div className="hidden md:grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 animate-fade-in">
                 {filteredCasts.map((cast, index) => (
                   <div 
                     key={cast.id} 

@@ -25,7 +25,7 @@ const PageContainer = ({
   return (
     <div className="app-container">
       <header className="p-4 border-b border-white/10">
-        <div className="container mx-auto flex justify-between items-center">
+        <div className="flex justify-between items-center px-2">
           <Logo />
           
           {/* Top Navigation Links for desktop/tablet */}
@@ -67,10 +67,8 @@ const PageContainer = ({
           )}
         </div>
       </header>
-      <main className={`flex-1 px-4 md:px-8 pb-20 pt-6 max-w-4xl mx-auto w-full ${className}`}>
-        <div className="md:max-w-3xl lg:max-w-4xl mx-auto">
-          {children}
-        </div>
+      <main className={`flex-1 px-1 sm:px-2 pb-20 pt-4 w-full ${className}`}>
+        {children}
       </main>
       {withBottomNav && isMobile && <BottomNav />}
     </div>
