@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -54,15 +55,16 @@ const HeroSection: React.FC<HeroSectionProps> = ({
             </Button>
           </Link>
           
+          <Button onClick={toggleAudio} variant="outline" size="lg" className={`text-lg h-12 px-8 w-full md:w-auto border-white text-white hover:bg-white/10 ${isAudioPlaying ? 'bg-white/20' : ''}`}>
+            {isAudioPlaying ? 'Stop' : 'Try a Mini Sleep Cast'}
+          </Button>
+          
           <a href={waitlistFormUrl} target="_blank" rel="noopener noreferrer">
             <Button size="lg" className="text-lg h-12 px-8 w-full md:w-auto text-white shadow-md hover:shadow-lg transition-all duration-300 bg-[#240740]">
               Join Waitlist
             </Button>
           </a>
           
-          <Button onClick={toggleAudio} variant="outline" size="lg" className={`text-lg h-12 px-8 w-full md:w-auto border-white text-white hover:bg-white/10 ${isAudioPlaying ? 'bg-white/20' : ''}`}>
-            {isAudioPlaying ? 'Stop' : 'Try a Mini Sleep Cast'}
-          </Button>
           <audio ref={audioRef} src="https://placeholder-url.com/sleepcast-demo.mp3" onEnded={() => setIsAudioPlaying(false)} />
         </div>
       </div>
