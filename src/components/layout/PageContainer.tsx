@@ -5,7 +5,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import Logo from '@/components/Logo';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, BarChart, Mic, Music } from 'lucide-react';
+import { Home, BarChart, MessageCircle, Music } from 'lucide-react';
 
 interface PageContainerProps {
   children: ReactNode;
@@ -39,12 +39,12 @@ const PageContainer = ({
                   <Home className="h-4 w-4" /> Dashboard
                 </Button>
               </Link>
-              <Link to="/app/voice">
+              <Link to="/app/check-in">
                 <Button 
-                  variant={currentPath === '/app/voice' ? 'default' : 'ghost'} 
+                  variant={currentPath === '/app/check-in' ? 'default' : 'ghost'} 
                   className="flex items-center gap-2"
                 >
-                  <Mic className="h-4 w-4" /> Voice AI
+                  <MessageCircle className="h-4 w-4" /> Daily Check-in
                 </Button>
               </Link>
               <Link to="/app/sleep-cast">

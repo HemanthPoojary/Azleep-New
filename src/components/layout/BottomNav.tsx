@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Moon, Mic, Music } from 'lucide-react';
+import { Moon, MessageCircle, Music } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const BottomNav = () => {
@@ -15,9 +15,9 @@ const BottomNav = () => {
       path: "/app/dashboard",
     },
     {
-      label: "Voice",
-      icon: Mic,
-      path: "/app/voice",
+      label: "Check-in",
+      icon: MessageCircle,
+      path: "/app/check-in",
     },
     {
       label: "Sleep Cast",
