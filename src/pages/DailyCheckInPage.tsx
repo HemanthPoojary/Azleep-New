@@ -4,10 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import PageContainer from '@/components/layout/PageContainer';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
-import { Moon, BookOpen, Headphones, MessageCircle, Heart, Star, Cloud } from 'lucide-react';
+import { Moon, BookOpen, Headphones, Heart, Star, Cloud } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import SleepGenieButton from '@/components/sleep/SleepGenieButton';
 
 // Emojis and their corresponding moods
 const moods = [
@@ -20,7 +21,6 @@ const moods = [
 
 // Dynamic suggestions based on user's mood
 const moodSuggestions = {
-  // Happy mood suggestions
   "Happy": [
     {
       text: "Enjoy calming meditation before sleep",
@@ -39,7 +39,6 @@ const moodSuggestions = {
       params: { mood: "Happy", promptType: "gratitude" }
     },
   ],
-  // Tired mood suggestions
   "Tired": [
     {
       text: "Try a guided power nap meditation",
@@ -53,16 +52,15 @@ const moodSuggestions = {
     },
     {
       text: "Talk to Sleep Genie about your day",
-      icon: MessageCircle,
-      action: "/app/voice",
+      icon: null, // We'll render a custom button for this
+      action: "sleep-genie",
     },
   ],
-  // Sad mood suggestions
   "Sad": [
     {
       text: "Talk to Sleep Genie about your feelings",
-      icon: MessageCircle,
-      action: "/app/voice",
+      icon: null, // We'll render a custom button for this
+      action: "sleep-genie",
     },
     {
       text: "Listen to uplifting sleep stories",
@@ -76,7 +74,6 @@ const moodSuggestions = {
       params: { mood: "Sad", promptType: "reflect" }
     },
   ],
-  // Upset mood suggestions
   "Upset": [
     {
       text: "Try a guided anger release meditation",
@@ -90,11 +87,10 @@ const moodSuggestions = {
     },
     {
       text: "Talk to Sleep Genie about what's bothering you",
-      icon: MessageCircle,
-      action: "/app/voice",
+      icon: null, // We'll render a custom button for this
+      action: "sleep-genie",
     },
   ],
-  // Sleepy mood suggestions
   "Sleepy": [
     {
       text: "Listen to a sleep story",
@@ -113,12 +109,11 @@ const moodSuggestions = {
       params: { mood: "Sleepy", promptType: "dream" }
     },
   ],
-  // Default suggestions if no mood is selected
   "default": [
     {
       text: "Talk to Sleep Genie about your feelings",
-      icon: MessageCircle,
-      action: "/app/voice",
+      icon: null, // We'll render a custom button for this
+      action: "sleep-genie",
     },
     {
       text: "Listen to comforting rain sounds",
@@ -162,6 +157,11 @@ const DailyCheckInPage = () => {
   };
 
   const handleSuggestionClick = (suggestion: any) => {
+    if (suggestion.action === "sleep-genie") {
+      // This will be handled by the SleepGenieButton component
+      return;
+    }
+    
     const path = suggestion.action;
     if (path.startsWith('/')) {
       // If there are params to pass (for journal entries)
@@ -182,6 +182,31 @@ const DailyCheckInPage = () => {
     }
     const moodName = moods[selectedMood].name;
     return moodSuggestions[moodName as keyof typeof moodSuggestions];
+  };
+
+  // Render a suggestion button based on the suggestion data
+  const renderSuggestionButton = (suggestion: any, index: number) => {
+    if (suggestion.action === "sleep-genie") {
+      return (
+        <SleepGenieButton 
+          key={index}
+          label={suggestion.text}
+          className="w-full py-6 bg-white/5 border border-white/10 hover:bg-white/10 text-left justify-start text-lg"
+        />
+      );
+    }
+    
+    return (
+      <Button
+        key={index}
+        variant="outline"
+        onClick={() => handleSuggestionClick(suggestion)}
+        className="w-full py-6 bg-white/5 border-white/10 hover:bg-white/10 text-left justify-start text-lg"
+      >
+        {suggestion.icon && <suggestion.icon className="mr-3 h-6 w-6" />}
+        {suggestion.text}
+      </Button>
+    );
   };
 
   return (
@@ -235,17 +260,9 @@ const DailyCheckInPage = () => {
             <h2 className="text-2xl font-semibold mb-6">Suggested for you</h2>
             
             <div className="space-y-4">
-              {getCurrentSuggestions().map((suggestion, index) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  onClick={() => handleSuggestionClick(suggestion)}
-                  className="w-full py-6 bg-white/5 border-white/10 hover:bg-white/10 text-left justify-start text-lg"
-                >
-                  <suggestion.icon className="mr-3 h-6 w-6" />
-                  {suggestion.text}
-                </Button>
-              ))}
+              {getCurrentSuggestions().map((suggestion, index) => 
+                renderSuggestionButton(suggestion, index)
+              )}
             </div>
           </div>
         )}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -108,22 +107,15 @@ const VoiceJournal: React.FC<VoiceJournalProps> = ({ initialMood, onEntrySaved }
       const aiResponse = getResponseForMessage(userMessage, initialMood);
       setMessages(prev => [...prev, { sender: 'genie', text: aiResponse }]);
       
-      // Save the conversation entry if user is logged in
-      if (user) {
-        try {
-          const success = await saveJournalEntry(userMessage);
-          if (success && onEntrySaved) {
-            onEntrySaved();
-          }
-        } catch (error) {
-          console.error("Error saving journal entry:", error);
-          toast.error("Could not save your journal entry. Please try again.");
+      // Save the conversation entry
+      try {
+        const success = await saveJournalEntry(userMessage);
+        if (success && onEntrySaved) {
+          onEntrySaved();
         }
-      } else {
-        console.log("User not logged in, cannot save journal entry");
-        toast("Sign in to save your journal entries", {
-          description: "Your entries won't be saved until you log in"
-        });
+      } catch (error) {
+        console.error("Error saving journal entry:", error);
+        toast.error("Could not save your journal entry. Please try again.");
       }
       
       setIsLoading(false);
@@ -157,17 +149,19 @@ const VoiceJournal: React.FC<VoiceJournalProps> = ({ initialMood, onEntrySaved }
   };
 
   const saveJournalEntry = async (content: string) => {
-    if (!user || !content.trim()) return false;
+    if (!content.trim()) return false;
     
     try {
-      console.log("Attempting to save journal entry for user:", user.id);
+      console.log("Attempting to save journal entry");
       console.log("Content:", content.substring(0, 20) + "...");
       console.log("Mood:", initialMood || 'Reflective');
+      
+      const guestId = "guest_" + Math.random().toString(36).substring(2, 15);
       
       const { error, data } = await supabase
         .from('journal_entries')
         .insert({
-          user_id: user.id,
+          user_id: user?.id || guestId, // Use user ID if logged in, otherwise use a guest ID
           content,
           mood: initialMood || 'Reflective',
           title: `Journal conversation - ${new Date().toLocaleDateString()}`

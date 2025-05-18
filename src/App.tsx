@@ -12,6 +12,7 @@ import SleepCastPage from "./pages/SleepCastPage";
 import DailyCheckInPage from "./pages/DailyCheckInPage";
 import LandingPage from "./pages/LandingPage";
 import JournalPage from "./pages/JournalPage";
+import VoiceInteractionPage from "./pages/VoiceInteractionPage";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -35,17 +36,17 @@ const App = () => (
             <Route path="/app/check-in" element={<DailyCheckInPage />} />
             <Route path="/app/sleep-cast" element={<SleepCastPage />} />
             <Route path="/app/journal" element={<JournalPage />} />
+            <Route path="/app/voice" element={<VoiceInteractionPage />} />
             
             {/* Legacy routes for backward compatibility */}
             <Route path="/onboarding" element={<Navigate to="/app/onboarding" />} />
             <Route path="/dashboard" element={<Navigate to="/app/dashboard" />} />
-            <Route path="/voice" element={<Navigate to="/app/check-in" />} />
+            <Route path="/voice" element={<Navigate to="/app/voice" />} />
             <Route path="/sleep-cast" element={<Navigate to="/app/sleep-cast" />} />
             <Route path="/stats" element={<Navigate to="/app/dashboard" />} />
             <Route path="/journal" element={<Navigate to="/app/journal" />} />
             
             {/* Redirect old routes */}
-            <Route path="/app/voice" element={<Navigate to="/app/check-in" />} />
             <Route path="/app/stats" element={<Navigate to="/app/dashboard" />} />
             
             {/* Handle 404 */}

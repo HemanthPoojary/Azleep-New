@@ -80,13 +80,11 @@ const VoiceInteractionPage = () => {
       
       setConversation(prev => [...prev, { sender: 'ai', text: randomAiResponse }]);
       
-      // Save conversation to the database if user is logged in
-      if (user && state?.mood) {
-        try {
-          await saveMoodInteraction(randomUserMessage, randomAiResponse, state.mood);
-        } catch (error) {
-          console.error("Failed to save interaction:", error);
-        }
+      // Save conversation to the database regardless of authentication status
+      try {
+        await saveMoodInteraction(randomUserMessage, randomAiResponse, state?.mood || 'neutral');
+      } catch (error) {
+        console.error("Failed to save interaction:", error);
       }
       
       setIsThinking(false);
@@ -95,16 +93,16 @@ const VoiceInteractionPage = () => {
 
   // Function to save the interaction to the database
   const saveMoodInteraction = async (userMessage: string, aiResponse: string, mood: string) => {
-    if (!user) return;
-    
     try {
       console.log("Saving mood interaction:", { userMessage, aiResponse, mood });
+      
+      const guestId = "guest_" + Math.random().toString(36).substring(2, 15);
       
       // Save to mood_records table
       const { error } = await supabase
         .from('mood_records')
         .insert({
-          user_id: user.id,
+          user_id: user?.id || guestId,
           mood: mood,
           notes: `User: ${userMessage}\nAI: ${aiResponse}`,
           voice_analysis_data: { conversation: true }
