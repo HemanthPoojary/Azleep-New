@@ -1,5 +1,4 @@
 
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -86,6 +85,16 @@
   }
 }
 
+/* Audio waveform animation */
+@keyframes pulse-audio {
+  0%, 100% {
+    height: 15px;
+  }
+  50% {
+    height: 30px;
+  }
+}
+
 .hover-scale {
   @apply transition-transform duration-300 hover:scale-105;
 }
@@ -117,6 +126,11 @@
 
 .animate-pulse-slow {
   animation: pulse-slow 3s ease-in-out infinite;
+}
+
+/* Shadow glow effect */
+.shadow-glow {
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
 }
 
 /* Media query utilities */
@@ -164,4 +178,3 @@
 .btn-glow:hover:after {
   opacity: 1;
 }
-
