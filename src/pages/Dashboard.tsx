@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Moon, Mic, Music, BarChart, ArrowRight } from 'lucide-react';
+import { Moon, Mic, Music, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { toast } from '@/components/ui/sonner';
@@ -10,6 +10,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import NightStats from '@/components/sleep/NightStats';
 import PersonalizedNudge from '@/components/sleep/PersonalizedNudge';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -30,17 +32,6 @@ import {
   Tooltip, 
   ResponsiveContainer 
 } from 'recharts';
-
-// Mock sleep data
-const mockData = [
-  { day: 'Mon', sleepHours: 6.5, stressLevel: 65 },
-  { day: 'Tue', sleepHours: 7.2, stressLevel: 58 },
-  { day: 'Wed', sleepHours: 6.8, stressLevel: 62 },
-  { day: 'Thu', sleepHours: 7.5, stressLevel: 45 },
-  { day: 'Fri', sleepHours: 8.1, stressLevel: 40 },
-  { day: 'Sat', sleepHours: 7.8, stressLevel: 35 },
-  { day: 'Sun', sleepHours: 7.0, stressLevel: 52 },
-];
 
 // Session storage key for sleep questions
 const SLEEP_QUESTIONS_KEY = 'azleep_sleep_questions_answered';
@@ -63,13 +54,88 @@ const Dashboard = () => {
     return "Good Evening";
   };
   
+  // Fetch sleep records
+  const { data: sleepData, isLoading: isSleepDataLoading } = useQuery({
+    queryKey: ['sleepRecords', user?.id],
+    queryFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+      
+      const { data, error } = await supabase
+        .from('sleep_records')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('sleep_date', { ascending: false })
+        .limit(7);
+        
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Fetch mood records for stress level
+  const { data: moodData, isLoading: isMoodDataLoading } = useQuery({
+    queryKey: ['moodRecords', user?.id],
+    queryFn: async () => {
+      if (!user) throw new Error("User not authenticated");
+      
+      const { data, error } = await supabase
+        .from('mood_records')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('recorded_at', { ascending: false })
+        .limit(7);
+        
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  // Transform data for the chart
+  const chartData = React.useMemo(() => {
+    if (!sleepData || !moodData) return [];
+
+    const dateMap = new Map();
+    
+    // First add sleep data
+    sleepData.forEach(record => {
+      const date = new Date(record.sleep_date);
+      const day = date.toLocaleDateString('en-US', { weekday: 'short' });
+      
+      dateMap.set(record.sleep_date, {
+        day,
+        sleepHours: record.sleep_duration,
+        date: record.sleep_date
+      });
+    });
+    
+    // Then add mood data
+    moodData.forEach(record => {
+      const date = new Date(record.recorded_at);
+      const dateStr = date.toISOString().split('T')[0]; // Convert to YYYY-MM-DD
+      
+      const existingData = dateMap.get(dateStr) || { 
+        day: date.toLocaleDateString('en-US', { weekday: 'short' }),
+        date: dateStr
+      };
+      
+      existingData.stressLevel = record.stress_level;
+      dateMap.set(dateStr, existingData);
+    });
+    
+    // Convert map to array and sort by date
+    return Array.from(dateMap.values())
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [sleepData, moodData]);
+  
   // Check if sleep questions need to be shown (once per session)
   useEffect(() => {
     const hasAnsweredQuestions = sessionStorage.getItem(SLEEP_QUESTIONS_KEY);
-    if (!hasAnsweredQuestions) {
+    if (!hasAnsweredQuestions && user) {
       setShowSleepQuestions(true);
     }
-  }, []);
+  }, [user]);
   
   const handleStillAwake = () => {
     setShowNudge(true);
@@ -81,15 +147,104 @@ const Dashboard = () => {
     setRelaxPoints(prev => Math.min(prev + 5, 100));
   };
 
-  const handleSleepQuestionsSubmit = () => {
-    toast.success("Thanks for sharing your sleep data!");
-    setShowSleepQuestions(false);
-    // Mark sleep questions as answered for this session
-    sessionStorage.setItem(SLEEP_QUESTIONS_KEY, 'true');
+  const handleSleepQuestionsSubmit = async () => {
+    if (!user) return;
+    
+    try {
+      // Parse sleep hours as a number
+      const duration = parseFloat(sleepHours);
+      
+      // Get today's date in YYYY-MM-DD format
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Check if we already have a record for today
+      const { data: existingRecord } = await supabase
+        .from('sleep_records')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('sleep_date', today)
+        .single();
+      
+      if (existingRecord) {
+        // Update existing record
+        await supabase
+          .from('sleep_records')
+          .update({ 
+            sleep_duration: duration,
+            sleep_quality: sleepQuality
+          })
+          .eq('id', existingRecord.id);
+      } else {
+        // Insert new record
+        await supabase
+          .from('sleep_records')
+          .insert({ 
+            user_id: user.id,
+            sleep_duration: duration,
+            sleep_quality: sleepQuality,
+            sleep_date: today
+          });
+      }
+      
+      toast.success("Thanks for sharing your sleep data!");
+      setShowSleepQuestions(false);
+      // Mark sleep questions as answered for this session
+      sessionStorage.setItem(SLEEP_QUESTIONS_KEY, 'true');
+    } catch (error) {
+      console.error("Error saving sleep data:", error);
+      toast.error("Failed to save sleep data. Please try again.");
+    }
   };
 
+  // Calculate sleep stats
+  const sleepStats = React.useMemo(() => {
+    if (!sleepData || sleepData.length === 0) {
+      return {
+        lastSessionDate: "No data",
+        completedSessions: 0,
+        totalMinutes: 0,
+        avgSleepHours: 0,
+        improvementPercent: 0
+      };
+    }
+    
+    const completedSessions = sleepData.length;
+    const totalMinutes = sleepData.reduce((sum, record) => sum + (record.sleep_duration * 60), 0);
+    
+    // Calculate average sleep time
+    const avgSleepHours = totalMinutes / completedSessions / 60;
+    
+    // Calculate improvement percentage (compare last 3 days with previous 4 days)
+    let improvementPercent = 0;
+    if (sleepData.length > 3) {
+      const recentSleep = sleepData.slice(0, 3);
+      const previousSleep = sleepData.slice(3, 7);
+      
+      if (previousSleep.length > 0) {
+        const recentAvg = recentSleep.reduce((sum, record) => sum + record.sleep_duration, 0) / recentSleep.length;
+        const previousAvg = previousSleep.reduce((sum, record) => sum + record.sleep_duration, 0) / previousSleep.length;
+        
+        improvementPercent = Math.round(((recentAvg - previousAvg) / previousAvg) * 100);
+      }
+    }
+    
+    // Format last session date
+    const lastSessionDate = new Date(sleepData[0]?.sleep_date).toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric' 
+    });
+    
+    return {
+      lastSessionDate,
+      completedSessions,
+      totalMinutes: Math.round(totalMinutes),
+      avgSleepHours: avgSleepHours.toFixed(1),
+      improvementPercent
+    };
+  }, [sleepData]);
+
   // Extract user details for personalized nudges
-  const userName = user?.first_name || "User";
+  const userName = user?.first_name || "there";
   const userAge = user?.age || undefined;
   const userOccupation = user?.occupation || undefined;
   const userSleepIssues = user?.sleep_issues || undefined;
@@ -106,7 +261,7 @@ const Dashboard = () => {
           </h1>
           <p className="text-muted-foreground flex items-center">
             <span className="inline-block h-3 w-3 rounded-full bg-green-400 mr-2"></span> 
-            Mood: Calm
+            Mood: {moodData && moodData[0]?.mood || "Calm"}
           </p>
         </div>
 
@@ -189,7 +344,7 @@ const Dashboard = () => {
             variant="outline" 
             size="lg" 
             className="sleep-card h-20 justify-start hover-scale"
-            onClick={() => navigate('/app/voice')}
+            onClick={() => navigate('/app/check-in')}
           >
             <Mic className="h-6 w-6 mr-4 text-azleep-primary" />
             <span className="text-lg">Talk to AI Sleep Genie</span>
@@ -216,67 +371,91 @@ const Dashboard = () => {
           </Button>
         </div>
         
-        {/* Sleep Stats Section (moved from StatsPage) */}
+        {/* Sleep Stats Section */}
         <div className="mb-8">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-semibold text-azleep-text">Sleep Overview</h2>
             <NightStats 
-              lastSessionDate="Today" 
-              completedSessions={12} 
-              totalMinutes={480} 
+              lastSessionDate={sleepStats.lastSessionDate} 
+              completedSessions={sleepStats.completedSessions} 
+              totalMinutes={sleepStats.totalMinutes} 
             />
           </div>
           
           <div className="sleep-card h-64 mb-6">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={mockData}
-                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="day" tick={{ fill: '#e8eaf6' }} />
-                <YAxis tick={{ fill: '#e8eaf6' }} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#1a1a2e', 
-                    borderColor: '#3f51b5',
-                    color: '#e8eaf6' 
-                  }} 
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="sleepHours" 
-                  name="Sleep (hours)"
-                  stroke="#3f51b5" 
-                  strokeWidth={2} 
-                  dot={{ fill: '#3f51b5', r: 4 }} 
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="stressLevel" 
-                  name="Stress Level"
-                  stroke="#6a11cb" 
-                  strokeWidth={2} 
-                  dot={{ fill: '#6a11cb', r: 4 }} 
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {isSleepDataLoading || isMoodDataLoading ? (
+              <div className="h-full flex items-center justify-center">
+                <p className="text-azleep-text">Loading sleep data...</p>
+              </div>
+            ) : chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={chartData}
+                  margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                  <XAxis dataKey="day" tick={{ fill: '#e8eaf6' }} />
+                  <YAxis tick={{ fill: '#e8eaf6' }} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#1a1a2e', 
+                      borderColor: '#3f51b5',
+                      color: '#e8eaf6' 
+                    }} 
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="sleepHours" 
+                    name="Sleep (hours)"
+                    stroke="#3f51b5" 
+                    strokeWidth={2} 
+                    dot={{ fill: '#3f51b5', r: 4 }} 
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="stressLevel" 
+                    name="Stress Level"
+                    stroke="#6a11cb" 
+                    strokeWidth={2} 
+                    dot={{ fill: '#6a11cb', r: 4 }} 
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center">
+                <p className="text-azleep-text mb-2">No sleep data available yet</p>
+                <Button 
+                  onClick={() => setShowSleepQuestions(true)}
+                  className="bg-azleep-accent text-white hover:bg-azleep-accent/90"
+                >
+                  Add Sleep Data
+                </Button>
+              </div>
+            )}
           </div>
           
           <div className="grid gap-4 md:grid-cols-3 mb-6">
             <div className="sleep-card">
               <h3 className="mb-2 text-lg font-semibold text-azleep-text">Average Sleep</h3>
-              <p className="text-3xl font-bold text-azleep-primary">7.2 hrs</p>
+              <p className="text-3xl font-bold text-azleep-primary">{sleepStats.avgSleepHours} hrs</p>
               <p className="mt-2 text-sm text-muted-foreground">
-                5% improvement from last week
+                {sleepStats.improvementPercent > 0 
+                  ? `${sleepStats.improvementPercent}% improvement from last week` 
+                  : sleepStats.improvementPercent < 0 
+                    ? `${Math.abs(sleepStats.improvementPercent)}% decrease from last week`
+                    : "No change from last week"}
               </p>
             </div>
             
             <div className="sleep-card">
               <h3 className="mb-2 text-lg font-semibold text-azleep-text">Stress Reduction</h3>
-              <p className="text-3xl font-bold text-azleep-accent">12%</p>
+              <p className="text-3xl font-bold text-azleep-accent">
+                {moodData && moodData.length > 1 
+                  ? `${Math.abs(Math.round((moodData[0].stress_level - moodData[1].stress_level) / moodData[1].stress_level * 100))}%` 
+                  : "0%"}
+              </p>
               <p className="mt-2 text-sm text-muted-foreground">
-                Your voice patterns show decreased stress
+                Your voice patterns show {moodData && moodData.length > 1 && moodData[0].stress_level < moodData[1].stress_level ? "decreased" : "increased"} stress
               </p>
             </div>
             
