@@ -1,18 +1,14 @@
-
 import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-
 interface HeroSectionProps {
   appUrl: string;
 }
-
 const HeroSection: React.FC<HeroSectionProps> = ({
   appUrl
 }) => {
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
   const toggleAudio = () => {
     if (audioRef.current) {
       if (isAudioPlaying) {
@@ -26,7 +22,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({
 
   // Google Form URL for the waitlist
   const waitlistFormUrl = "https://docs.google.com/forms/d/1JsgB8-uNH6fjo3E4DNtFUiaojHnEL5SmkBfo0DjT-5Q/viewform";
-  
   return <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#2C3E50] to-[#8E44AD] p-6">
       {/* Animated stars background */}
       <div className="stars-container">
@@ -45,7 +40,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
       </div>
       
       <div className="container mx-auto text-center z-10 relative">
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-white leading-tight font-sans">
+        <h1 className="text-4xl lg:text-6xl font-bold mb-4 text-white leading-tight font-sans py-0 my-0 mx-0 md:text-4xl">
           Sleep Better with Azleep's AI Web App
         </h1>
         <p className="text-xl md:text-2xl text-gray-200 mb-8 max-w-2xl mx-auto">
@@ -80,5 +75,4 @@ const HeroSection: React.FC<HeroSectionProps> = ({
       </div>
     </section>;
 };
-
 export default HeroSection;
