@@ -192,24 +192,26 @@ const DailyCheckInPage = () => {
           </div>
         </div>
         
-        {/* Suggestions - now dynamic based on mood */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-6">Suggested for you</h2>
-          
-          <div className="space-y-4">
-            {getCurrentSuggestions().map((suggestion, index) => (
-              <Button
-                key={index}
-                variant="outline"
-                onClick={() => handleSuggestionClick(suggestion.action)}
-                className="w-full py-6 bg-white/5 border-white/10 hover:bg-white/10 text-left justify-start text-lg"
-              >
-                <suggestion.icon className="mr-3 h-6 w-6" />
-                {suggestion.text}
-              </Button>
-            ))}
+        {/* Suggestions - only shown when a mood is selected */}
+        {selectedMood !== null && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-semibold mb-6">Suggested for you</h2>
+            
+            <div className="space-y-4">
+              {getCurrentSuggestions().map((suggestion, index) => (
+                <Button
+                  key={index}
+                  variant="outline"
+                  onClick={() => handleSuggestionClick(suggestion.action)}
+                  className="w-full py-6 bg-white/5 border-white/10 hover:bg-white/10 text-left justify-start text-lg"
+                >
+                  <suggestion.icon className="mr-3 h-6 w-6" />
+                  {suggestion.text}
+                </Button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </PageContainer>
   );
