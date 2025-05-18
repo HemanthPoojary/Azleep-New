@@ -5,6 +5,7 @@ import PageContainer from '@/components/layout/PageContainer';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { Moon, BookOpen, Headphones, MessageCircle, Heart, Star, Cloud } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // Emojis and their corresponding moods
 const moods = [
@@ -131,8 +132,6 @@ const DailyCheckInPage = () => {
   const navigate = useNavigate();
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
   
-  // Removed the getGreeting function since we're using hardcoded text
-
   const handleMoodSelect = (index: number) => {
     setSelectedMood(index);
     toast(`You're feeling ${moods[index].name} tonight`);
@@ -176,19 +175,27 @@ const DailyCheckInPage = () => {
           </h2>
           
           <div className="flex justify-center gap-4 md:gap-8">
-            {moods.map((mood, index) => (
-              <button
-                key={index}
-                onClick={() => handleMoodSelect(index)}
-                className={`flex flex-col items-center justify-center p-5 rounded-full transition-all ${
-                  selectedMood === index 
-                    ? `${mood.color} scale-110 shadow-lg` 
-                    : 'bg-white/10 hover:bg-white/20'
-                }`}
-              >
-                <span className="text-3xl">{mood.emoji}</span>
-              </button>
-            ))}
+            <TooltipProvider>
+              {moods.map((mood, index) => (
+                <Tooltip key={index}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => handleMoodSelect(index)}
+                      className={`flex flex-col items-center justify-center p-5 rounded-full transition-all ${
+                        selectedMood === index 
+                          ? `${mood.color} scale-110 shadow-lg` 
+                          : 'bg-white/10 hover:bg-white/20'
+                      }`}
+                    >
+                      <span className="text-3xl">{mood.emoji}</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-azleep-accent/90 text-white border-none animate-fade-in">
+                    <p className="font-medium">{mood.name}</p>
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </TooltipProvider>
           </div>
         </div>
         
