@@ -75,13 +75,15 @@ const moodPrompts = {
 
 interface JournalPromptsProps {
   initialCategory?: string;
+  onEntrySaved?: () => void;
 }
 
-export const JournalPrompts: React.FC<JournalPromptsProps> = ({ initialCategory }) => {
+export const JournalPrompts: React.FC<JournalPromptsProps> = ({ initialCategory, onEntrySaved }) => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [currentPrompt, setCurrentPrompt] = useState<string | null>(null);
   const [response, setResponse] = useState('');
   const [savedResponses, setSavedResponses] = useState<Array<{prompt: string, response: string, date: string}>>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   
   // Set initial category from props (from check-in page)
@@ -101,6 +103,7 @@ export const JournalPrompts: React.FC<JournalPromptsProps> = ({ initialCategory 
   const fetchSavedJournalEntries = async () => {
     if (!user) return;
     
+    setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('journal_entries')
@@ -122,6 +125,9 @@ export const JournalPrompts: React.FC<JournalPromptsProps> = ({ initialCategory 
       }
     } catch (error) {
       console.error('Error fetching journal entries:', error);
+      toast("Failed to load saved entries");
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -151,6 +157,7 @@ export const JournalPrompts: React.FC<JournalPromptsProps> = ({ initialCategory 
       return;
     }
     
+    setIsLoading(true);
     try {
       // Save to Supabase
       const { data, error } = await supabase
@@ -168,21 +175,30 @@ export const JournalPrompts: React.FC<JournalPromptsProps> = ({ initialCategory 
       if (error) throw error;
       
       // Update UI
-      const newSavedResponse = {
-        prompt: currentPrompt,
-        response: response,
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-      };
-      
-      setSavedResponses([newSavedResponse, ...savedResponses]);
-      setResponse('');
-      setCurrentPrompt(null);
-      setSelectedCategory(null);
-      
-      toast("Your reflection has been saved");
+      if (data && data[0]) {
+        const newSavedResponse = {
+          prompt: currentPrompt,
+          response: response,
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        };
+        
+        setSavedResponses([newSavedResponse, ...savedResponses]);
+        setResponse('');
+        setCurrentPrompt(null);
+        setSelectedCategory(null);
+        
+        // Call the callback to update points/streak
+        if (onEntrySaved) {
+          onEntrySaved();
+        } else {
+          toast("Your reflection has been saved");
+        }
+      }
     } catch (error) {
       console.error('Error saving journal entry:', error);
       toast("Failed to save your entry. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -216,6 +232,7 @@ export const JournalPrompts: React.FC<JournalPromptsProps> = ({ initialCategory 
               size="sm" 
               onClick={getNewPrompt} 
               className="text-gray-300 hover:text-white"
+              disabled={isLoading}
             >
               <RefreshCcw className="h-4 w-4 mr-1" /> New Prompt
             </Button>
@@ -235,8 +252,12 @@ export const JournalPrompts: React.FC<JournalPromptsProps> = ({ initialCategory 
           />
           
           <div className="flex justify-end">
-            <Button onClick={saveResponse} className="bg-azleep-primary hover:bg-azleep-primary/80">
-              Save Reflection
+            <Button 
+              onClick={saveResponse} 
+              className="bg-azleep-primary hover:bg-azleep-primary/80"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Saving...' : 'Save Reflection'}
             </Button>
           </div>
         </div>
@@ -246,28 +267,32 @@ export const JournalPrompts: React.FC<JournalPromptsProps> = ({ initialCategory 
       {savedResponses.length > 0 && !currentPrompt && (
         <div className="mt-8">
           <h3 className="text-xl font-medium text-white mb-4">Recent Reflections</h3>
-          <div className="space-y-4">
-            {savedResponses.map((item, index) => (
-              <Card 
-                key={index} 
-                className="backdrop-blur-sm bg-white/5 border-white/10 text-white"
-              >
-                <CardContent className="p-4">
-                  <p className="text-sm text-gray-300 mb-1">{item.date}</p>
-                  <p className="text-white/90 italic mb-3">"{item.prompt}"</p>
-                  <p>{item.response}</p>
-                  <div className="flex justify-end gap-2 mt-2">
-                    <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
-                      <Heart className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
-                      <Star className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {isLoading && savedResponses.length === 0 ? (
+            <p className="text-center py-4 text-gray-400">Loading your journal entries...</p>
+          ) : (
+            <div className="space-y-4">
+              {savedResponses.map((item, index) => (
+                <Card 
+                  key={index} 
+                  className="backdrop-blur-sm bg-white/5 border-white/10 text-white"
+                >
+                  <CardContent className="p-4">
+                    <p className="text-sm text-gray-300 mb-1">{item.date}</p>
+                    <p className="text-white/90 italic mb-3">"{item.prompt}"</p>
+                    <p>{item.response}</p>
+                    <div className="flex justify-end gap-2 mt-2">
+                      <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
+                        <Heart className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
+                        <Star className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

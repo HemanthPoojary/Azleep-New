@@ -27,18 +27,21 @@ interface JournalEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialMood?: string;
+  onEntrySaved?: () => void;
 }
 
 export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({ 
   isOpen, 
   onClose,
-  initialMood
+  initialMood,
+  onEntrySaved
 }) => {
   const [entryType, setEntryType] = useState<'text' | 'voice' | 'image'>('text');
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   
   // Set initial mood when provided from check-in
@@ -95,6 +98,8 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
       return;
     }
     
+    setIsLoading(true);
+    
     try {
       // Save to Supabase
       const { error } = await supabase
@@ -108,12 +113,20 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
         
       if (error) throw error;
       
-      toast("Journal entry saved successfully!");
+      // Call the callback to update points/streak
+      if (onEntrySaved) {
+        onEntrySaved();
+      } else {
+        toast("Journal entry saved successfully!");
+      }
+      
       resetForm();
       onClose();
     } catch (error) {
       console.error('Error saving journal entry:', error);
       toast("Failed to save journal entry. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -285,8 +298,9 @@ export const JournalEntryModal: React.FC<JournalEntryModalProps> = ({
           <Button 
             onClick={handleSave} 
             className="bg-azleep-primary hover:bg-azleep-primary/80"
+            disabled={isLoading}
           >
-            Save Entry
+            {isLoading ? 'Saving...' : 'Save Entry'}
           </Button>
         </DialogFooter>
       </DialogContent>
