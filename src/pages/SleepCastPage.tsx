@@ -56,6 +56,7 @@ const SleepCastPage = () => {
   const [volume, setVolume] = useState(70);
   const [selectedCast, setSelectedCast] = useState(sleepCasts[0]);
   const [recommendation, setRecommendation] = useState('Ocean Waves'); // Simulating a recommendation
+  const [activeCategory, setActiveCategory] = useState('All');
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -85,6 +86,15 @@ const SleepCastPage = () => {
       toast(`Changing to ${cast.title}`);
     }
   };
+
+  const handleCategorySelect = (category: string) => {
+    setActiveCategory(category);
+  };
+
+  // Filter casts based on active category
+  const filteredCasts = activeCategory === 'All' 
+    ? sleepCasts 
+    : sleepCasts.filter(cast => cast.category === activeCategory);
 
   return (
     <PageContainer className="relative overflow-hidden p-0">
@@ -122,161 +132,187 @@ const SleepCastPage = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4">
-        <div className="mb-4 flex items-center">
+      <div className="max-w-full w-full mx-auto">
+        <div className="px-4 py-4 mb-2 flex items-center">
           <Button variant="ghost" size="icon" onClick={() => navigate('/app/dashboard')} className="mr-2">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-xl font-bold text-azleep-text">Sleep Cast</h1>
         </div>
         
-        {/* Recommendation section - visual enhancement */}
-        <div className="mb-8 animate-fade-in">
-          <div className="rounded-xl bg-white/10 backdrop-blur-md p-4 flex items-center border border-white/20 shadow-lg mx-auto max-w-lg transform hover:scale-102 transition-all duration-300">
-            <div className="bg-azleep-accent/30 rounded-full p-2 mr-3">
-              <Star className="h-5 w-5 text-[#FBBF24]" />
+        <div className="flex flex-col md:flex-row md:items-start md:justify-center gap-8 px-4 md:px-6 lg:px-8 max-w-7xl mx-auto">
+          {/* Left column for player on larger screens */}
+          <div className="md:w-1/2 lg:w-2/5 xl:w-1/3 flex flex-col items-center">
+            {/* Recommendation section - visual enhancement */}
+            <div className="mb-6 w-full max-w-md mx-auto animate-fade-in">
+              <div className="rounded-xl bg-white/10 backdrop-blur-md p-4 flex items-center border border-white/20 shadow-lg transform hover:scale-102 transition-all duration-300">
+                <div className="bg-azleep-accent/30 rounded-full p-2 mr-3">
+                  <Star className="h-5 w-5 text-[#FBBF24]" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-0.5">Tonight's Recommendation</p>
+                  <p className="text-base font-medium text-azleep-text">
+                    {recommendation}
+                  </p>
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-0.5">Tonight's Recommendation</p>
-              <p className="text-base font-medium text-azleep-text">
-                {recommendation}
-              </p>
+
+            {/* Main player section - enhanced visuals */}
+            <div className="flex flex-col items-center justify-center mb-8 animate-fade-in relative">
+              <div className={`w-60 h-60 mb-8 md:mb-6 md:w-64 md:h-64 lg:w-72 lg:h-72 ${isPlaying ? 'shadow-glow' : ''} relative`} style={{
+                boxShadow: isPlaying ? '0 0 30px rgba(251, 191, 36, 0.5)' : 'none',
+                transition: 'box-shadow 0.5s ease'
+              }}>
+                {/* Decorative circular rings */}
+                <div className="absolute inset-0 rounded-full border border-white/10 -m-3 animate-pulse-slow"></div>
+                <div className="absolute inset-0 rounded-full border border-white/5 -m-6 animate-pulse-slow" style={{ animationDelay: '0.5s' }}></div>
+                
+                <AspectRatio ratio={1 / 1} className="relative">
+                  <div className={`absolute inset-0 rounded-full sleep-card flex flex-col items-center justify-center ${isPlaying ? 'pulse-ring' : ''}`}>
+                    <div className="text-center px-4 mb-4">
+                      <p className="text-lg font-medium text-azleep-text mb-2">
+                        {selectedCast.title}
+                      </p>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {selectedCast.description}
+                      </p>
+                      {/* Enhanced audio waveform visualization */}
+                      {isPlaying && (
+                        <div className="flex items-end justify-center h-12 gap-1.5 mb-2">
+                          {[0, 1, 2, 3, 4].map(i => (
+                            <div 
+                              key={i} 
+                              className="bg-[#FBBF24] w-2 rounded-full" 
+                              style={{
+                                height: `${20 + Math.sin(Date.now() / 500 + i) * 15}px`,
+                                animation: 'pulse-audio 1.5s ease-in-out infinite',
+                                animationDelay: `${i * 0.2}s`
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-14 w-14 rounded-full bg-[#FBBF24] hover:bg-[#F59E0B] text-white border-none shadow-lg" 
+                      onClick={handlePlayPause}
+                    >
+                      {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-1" />}
+                    </Button>
+                  </div>
+                </AspectRatio>
+              </div>
+              
+              {/* Enhanced volume control */}
+              <div className="flex items-center w-full max-w-xs md:max-w-sm mb-4 bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/10">
+                <Volume2 className="mr-3 h-5 w-5 text-muted-foreground" />
+                <Slider 
+                  defaultValue={[volume]} 
+                  max={100} 
+                  step={1} 
+                  className="w-full" 
+                  onValueChange={handleVolumeChange} 
+                />
+                <span className="ml-3 text-sm text-muted-foreground min-w-[30px]">{volume}%</span>
+              </div>
+
+              {/* Duration tag */}
+              <div className="text-sm text-muted-foreground flex items-center">
+                <span className="inline-block px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full border border-white/10">
+                  {selectedCast.duration}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Main player section - enhanced visuals */}
-        <div className="flex flex-col items-center justify-center h-[35vh] md:h-[40vh] animate-fade-in relative">
-          <div className={`w-60 h-60 mb-8 md:w-72 md:h-72 ${isPlaying ? 'shadow-glow' : ''} relative`} style={{
-            boxShadow: isPlaying ? '0 0 30px rgba(251, 191, 36, 0.5)' : 'none',
-            transition: 'box-shadow 0.5s ease'
-          }}>
-            {/* Decorative circular rings */}
-            <div className="absolute inset-0 rounded-full border border-white/10 -m-3 animate-pulse-slow"></div>
-            <div className="absolute inset-0 rounded-full border border-white/5 -m-6 animate-pulse-slow" style={{ animationDelay: '0.5s' }}></div>
-            
-            <AspectRatio ratio={1 / 1} className="relative">
-              <div className={`absolute inset-0 rounded-full sleep-card flex flex-col items-center justify-center ${isPlaying ? 'pulse-ring' : ''}`}>
-                <div className="text-center px-4 mb-4">
-                  <p className="text-lg font-medium text-azleep-text mb-2">
-                    {selectedCast.title}
-                  </p>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {selectedCast.description}
-                  </p>
-                  {/* Enhanced audio waveform visualization */}
-                  {isPlaying && (
-                    <div className="flex items-end justify-center h-12 gap-1.5 mb-2">
-                      {[0, 1, 2, 3, 4].map(i => (
-                        <div 
-                          key={i} 
-                          className="bg-[#FBBF24] w-2 rounded-full" 
-                          style={{
-                            height: `${20 + Math.sin(Date.now() / 500 + i) * 15}px`,
-                            animation: 'pulse-audio 1.5s ease-in-out infinite',
-                            animationDelay: `${i * 0.2}s`
-                          }}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
+          
+          {/* Right column for categories and list on larger screens */}
+          <div className="md:w-1/2 lg:w-3/5 xl:w-2/3">
+            {/* Categories section - scrollable on mobile, grid on desktop */}
+            <div className="mb-6">
+              <div className="flex items-center justify-center md:justify-start gap-2 overflow-x-auto pb-2 no-scrollbar">
                 <Button 
                   variant="outline" 
-                  size="icon" 
-                  className="h-14 w-14 rounded-full bg-[#FBBF24] hover:bg-[#F59E0B] text-white border-none shadow-lg" 
-                  onClick={handlePlayPause}
+                  size="sm" 
+                  className={`rounded-full ${activeCategory === 'All' ? 'bg-azleep-accent/20 text-azleep-text' : 'bg-white/10'} border-white/20 backdrop-blur-sm hover:bg-white/20`}
+                  onClick={() => handleCategorySelect('All')}
                 >
-                  {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-1" />}
+                  All
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className={`rounded-full ${activeCategory === 'Nature' ? 'bg-azleep-accent/20 text-azleep-text' : 'bg-white/10'} border-white/20 backdrop-blur-sm hover:bg-white/20`}
+                  onClick={() => handleCategorySelect('Nature')}
+                >
+                  Nature
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className={`rounded-full ${activeCategory === 'Meditation' ? 'bg-azleep-accent/20 text-azleep-text' : 'bg-white/10'} border-white/20 backdrop-blur-sm hover:bg-white/20`}
+                  onClick={() => handleCategorySelect('Meditation')}
+                >
+                  Meditation
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className={`rounded-full ${activeCategory === 'Stories' ? 'bg-azleep-accent/20 text-azleep-text' : 'bg-white/10'} border-white/20 backdrop-blur-sm hover:bg-white/20`}
+                  onClick={() => handleCategorySelect('Stories')}
+                >
+                  Stories
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className={`rounded-full ${activeCategory === 'Music' ? 'bg-azleep-accent/20 text-azleep-text' : 'bg-white/10'} border-white/20 backdrop-blur-sm hover:bg-white/20`}
+                  onClick={() => handleCategorySelect('Music')}
+                >
+                  Music
                 </Button>
               </div>
-            </AspectRatio>
-          </div>
-          
-          {/* Enhanced volume control */}
-          <div className="flex items-center w-full max-w-xs md:max-w-sm mb-4 bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/10">
-            <Volume2 className="mr-3 h-5 w-5 text-muted-foreground" />
-            <Slider 
-              defaultValue={[volume]} 
-              max={100} 
-              step={1} 
-              className="w-full" 
-              onValueChange={handleVolumeChange} 
-            />
-            <span className="ml-3 text-sm text-muted-foreground min-w-[30px]">{volume}%</span>
-          </div>
-
-          {/* Duration tag */}
-          <div className="text-sm text-muted-foreground flex items-center mb-8">
-            <span className="inline-block px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full border border-white/10">
-              {selectedCast.duration}
-            </span>
-          </div>
-        </div>
-        
-        {/* Categories section - new addition */}
-        <div className="mt-2 mb-6">
-          <div className="flex items-center justify-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-            <Button variant="outline" size="sm" className="rounded-full bg-white/10 border-white/20 backdrop-blur-sm hover:bg-white/20">
-              All
-            </Button>
-            <Button variant="outline" size="sm" className="rounded-full bg-azleep-accent/20 border-white/20 backdrop-blur-sm hover:bg-azleep-accent/30 text-azleep-text">
-              Nature
-            </Button>
-            <Button variant="outline" size="sm" className="rounded-full bg-white/10 border-white/20 backdrop-blur-sm hover:bg-white/20">
-              Meditation
-            </Button>
-            <Button variant="outline" size="sm" className="rounded-full bg-white/10 border-white/20 backdrop-blur-sm hover:bg-white/20">
-              Stories
-            </Button>
-            <Button variant="outline" size="sm" className="rounded-full bg-white/10 border-white/20 backdrop-blur-sm hover:bg-white/20">
-              Music
-            </Button>
-          </div>
-        </div>
-        
-        {/* Sleep cast list section - enhanced layout */}
-        <div className="mt-4 pb-20">
-          <h2 className="text-lg font-semibold text-azleep-text mb-4 flex items-center">
-            <span className="bg-azleep-accent/30 rounded-full p-1 mr-2 inline-flex justify-center items-center">
-              <Star className="h-4 w-4 text-[#FBBF24]" />
-            </span>
-            More Sleep Casts
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in">
-            {sleepCasts.map((cast, index) => (
-              <div 
-                key={cast.id} 
-                className="animate-fade-in" 
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <SleepCastCard {...cast} onPlay={() => handleCastSelect(cast)} />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Mobile view: featured casts carousel */}
-        {isMobile && (
-          <div className="mt-8 mb-16">
-            <h2 className="text-lg font-semibold text-azleep-text mb-4 flex items-center">
-              <span className="bg-azleep-accent/30 rounded-full p-1 mr-2 inline-flex justify-center items-center">
-                <Moon className="h-4 w-4 text-[#FBBF24]" />
-              </span>
-              Featured Sleep Casts
-            </h2>
-            <Carousel className="w-full">
-              <CarouselContent>
-                {sleepCasts.slice(0, 3).map(cast => (
-                  <CarouselItem key={cast.id} className="md:basis-1/2 lg:basis-1/3 pl-2 pr-6">
+            </div>
+            
+            {/* Sleep cast list section - enhanced grid layout */}
+            <div className="mb-20 md:mb-0">
+              <h2 className="text-lg font-semibold text-azleep-text mb-4 flex items-center">
+                <span className="bg-azleep-accent/30 rounded-full p-1 mr-2 inline-flex justify-center items-center">
+                  <Star className="h-4 w-4 text-[#FBBF24]" />
+                </span>
+                {activeCategory === 'All' ? 'All Sleep Casts' : `${activeCategory} Sleep Casts`}
+              </h2>
+              
+              {/* Desktop/tablet grid view */}
+              <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in">
+                {filteredCasts.map((cast, index) => (
+                  <div 
+                    key={cast.id} 
+                    className="animate-fade-in" 
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
                     <SleepCastCard {...cast} onPlay={() => handleCastSelect(cast)} />
-                  </CarouselItem>
+                  </div>
                 ))}
-              </CarouselContent>
-            </Carousel>
+              </div>
+              
+              {/* Mobile view */}
+              <div className="grid grid-cols-1 gap-4 md:hidden animate-fade-in">
+                {filteredCasts.map((cast, index) => (
+                  <div 
+                    key={cast.id} 
+                    className="animate-fade-in" 
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
+                    <SleepCastCard {...cast} onPlay={() => handleCastSelect(cast)} />
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </PageContainer>
   );
