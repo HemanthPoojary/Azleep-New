@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Moon, Mic, Music, BarChart, ArrowRight } from 'lucide-react';
@@ -7,6 +8,8 @@ import { toast } from '@/components/ui/sonner';
 import PageContainer from '@/components/layout/PageContainer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import NightStats from '@/components/sleep/NightStats';
+import PersonalizedNudge from '@/components/sleep/PersonalizedNudge';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -49,7 +52,7 @@ const Dashboard = () => {
   const [showSleepQuestions, setShowSleepQuestions] = useState(false);
   const [sleepHours, setSleepHours] = useState<string>("8");
   const [sleepQuality, setSleepQuality] = useState<string>("good");
-  const userName = "User";
+  const { user } = useAuth();
   const isMobile = useIsMobile();
   
   // Get time of day for greeting
@@ -84,6 +87,12 @@ const Dashboard = () => {
     // Mark sleep questions as answered for this session
     sessionStorage.setItem(SLEEP_QUESTIONS_KEY, 'true');
   };
+
+  // Extract user details for personalized nudges
+  const userName = user?.first_name || "User";
+  const userAge = user?.age || undefined;
+  const userOccupation = user?.occupation || undefined;
+  const userSleepIssues = user?.sleep_issues || undefined;
 
   return (
     <>
@@ -165,6 +174,15 @@ const Dashboard = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        
+        {/* Display personalized sleep nudge */}
+        <div className="mb-6">
+          <PersonalizedNudge 
+            age={userAge} 
+            occupation={userOccupation} 
+            sleepIssues={userSleepIssues} 
+          />
+        </div>
         
         <div className="grid gap-4 mb-8 md:grid-cols-2 lg:grid-cols-3">
           <Button 
