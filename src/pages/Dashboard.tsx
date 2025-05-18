@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Moon, Mic, Music } from 'lucide-react';
+import { Moon, Mic, Music, BarChart, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { toast } from '@/components/ui/sonner';
@@ -38,7 +39,7 @@ const Dashboard = () => {
   };
   
   const handlePlaySleepCast = () => {
-    navigate('/sleep-cast');
+    navigate('/app/sleep-cast');
     // Add points when user interacts with the app
     setRelaxPoints(prev => Math.min(prev + 5, 100));
   };
@@ -64,7 +65,7 @@ const Dashboard = () => {
             variant="outline" 
             size="lg" 
             className="sleep-card h-20 justify-start hover-scale"
-            onClick={() => navigate('/voice')}
+            onClick={() => navigate('/app/voice')}
           >
             <Mic className="h-6 w-6 mr-4 text-azleep-primary" />
             <span className="text-lg">Talk to AI Sleep Genie</span>
@@ -89,6 +90,48 @@ const Dashboard = () => {
             <Moon className="h-6 w-6 mr-4 text-azleep-accent" />
             <span className="text-lg">I'm Still Awake</span>
           </Button>
+        </div>
+        
+        {/* Navigation section */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">Quick Navigation</h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Button 
+              variant="default" 
+              className="flex items-center justify-between"
+              onClick={() => navigate('/app/stats')}
+            >
+              <div className="flex items-center">
+                <BarChart className="h-5 w-5 mr-2" />
+                <span>View Sleep Stats</span>
+              </div>
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+            
+            <Button 
+              variant="default" 
+              className="flex items-center justify-between"
+              onClick={() => navigate('/app/voice')}
+            >
+              <div className="flex items-center">
+                <Mic className="h-5 w-5 mr-2" />
+                <span>Voice Assistant</span>
+              </div>
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+            
+            <Button 
+              variant="default" 
+              className="flex items-center justify-between"
+              onClick={() => navigate('/app/sleep-cast')}
+            >
+              <div className="flex items-center">
+                <Music className="h-5 w-5 mr-2" />
+                <span>Sleep Casts</span>
+              </div>
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
         </div>
         
         <div className="mt-8 max-w-md mx-auto md:mx-0">

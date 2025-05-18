@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { Moon, Star } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { toast } from '@/components/ui/sonner';
 
 const Logo: React.FC<{ className?: string }> = ({ className = '' }) => {
   const location = useLocation();
@@ -10,8 +12,16 @@ const Logo: React.FC<{ className?: string }> = ({ className = '' }) => {
   // Otherwise redirect to landing page
   const redirectUrl = location.pathname.startsWith('/app') ? '/app/dashboard' : '/';
   
+  const handleLogoClick = () => {
+    toast(`Navigating to ${redirectUrl === '/' ? 'Home' : 'Dashboard'}`);
+  };
+  
   return (
-    <Link to={redirectUrl} className={`flex items-center gap-2 ${className}`}>
+    <Link 
+      to={redirectUrl} 
+      className={`flex items-center gap-2 ${className}`}
+      onClick={handleLogoClick}
+    >
       <div className="relative">
         {/* Gold moon */}
         <div className="relative">
