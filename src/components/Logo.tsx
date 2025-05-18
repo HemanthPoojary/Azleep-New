@@ -1,11 +1,17 @@
-
 import React from 'react';
 import { Moon, Star } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const Logo: React.FC<{ className?: string }> = ({ className = '' }) => {
+  const location = useLocation();
+  
+  // Determine the redirect URL based on current path
+  // If we're in the app section, redirect to dashboard
+  // Otherwise redirect to landing page
+  const redirectUrl = location.pathname.startsWith('/app') ? '/app/dashboard' : '/';
+  
   return (
-    <Link to="/" className={`flex items-center gap-2 ${className}`}>
+    <Link to={redirectUrl} className={`flex items-center gap-2 ${className}`}>
       <div className="relative">
         {/* Gold moon */}
         <div className="relative">
