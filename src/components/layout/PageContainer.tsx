@@ -1,5 +1,5 @@
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import BottomNav from './BottomNav';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Logo from '@/components/Logo';
@@ -22,6 +22,28 @@ const PageContainer = ({
   const isMobile = useIsMobile();
   const location = useLocation();
   const currentPath = location.pathname;
+
+  // Add mobile viewport meta tag effects
+  useEffect(() => {
+    // Update viewport meta tag for better mobile experience
+    const viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (viewportMeta) {
+      viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+    }
+    
+    // Apply full-screen mobile app feel
+    document.documentElement.style.height = '100%';
+    document.body.style.height = '100%';
+    document.body.style.overflowX = 'hidden';
+    document.body.style.position = 'relative';
+    
+    // Clean up
+    return () => {
+      if (viewportMeta) {
+        viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0');
+      }
+    };
+  }, []);
 
   const navLinks = [
     {
@@ -47,8 +69,8 @@ const PageContainer = ({
   ];
 
   return (
-    <div className="app-container">
-      <header className="p-3 md:p-4 border-b border-white/10">
+    <div className="app-container min-h-screen flex flex-col">
+      <header className="sticky top-0 z-40 p-3 md:p-4 border-b border-white/10 bg-azleep-dark/95 backdrop-blur-md shadow-sm">
         <div className="flex justify-between items-center px-1 md:px-2">
           <Logo />
           

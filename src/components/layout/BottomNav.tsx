@@ -44,9 +44,10 @@ const BottomNav = () => {
                 ? "text-azleep-accent scale-105"
                 : "text-gray-400 hover:text-gray-300"
             )}
+            aria-current={currentPath === item.path ? "page" : undefined}
           >
             <item.icon className="h-5 w-5 mb-1" />
-            <span className="text-xs">{item.label}</span>
+            <span className="text-xs font-medium">{item.label}</span>
           </Link>
         ))}
       </div>
