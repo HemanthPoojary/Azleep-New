@@ -1,4 +1,4 @@
-
+import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +13,7 @@ import DailyCheckInPage from "./pages/DailyCheckInPage";
 import LandingPage from "./pages/LandingPage";
 import JournalPage from "./pages/JournalPage";
 import VoiceInteractionPage from "./pages/VoiceInteractionPage";
+import VoiceFirstSleepAssistant from "./pages/VoiceFirstSleepAssistant";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/app/sleep-cast" element={<SleepCastPage />} />
             <Route path="/app/journal" element={<JournalPage />} />
             <Route path="/app/voice" element={<VoiceInteractionPage />} />
+            <Route path="/app/sleep-assistant" element={<VoiceFirstSleepAssistant />} />
             
             {/* Legacy routes for backward compatibility */}
             <Route path="/onboarding" element={<Navigate to="/app/onboarding" />} />

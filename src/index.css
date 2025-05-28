@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -239,4 +238,20 @@
     margin-left: auto;
     margin-right: auto;
   }
+}
+
+@keyframes sound-wave {
+  0% {
+    height: 4px;
+  }
+  50% {
+    height: 16px;
+  }
+  100% {
+    height: 4px;
+  }
+}
+
+.animate-sound-wave {
+  animation: sound-wave 1s ease-in-out infinite;
 }

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Urban Whispers</string>
+    <string name="title_activity_main">Urban Whispers</string>
+    <string name="package_name">com.azleep.urbanwhispers</string>
+    <string name="custom_url_scheme">com.azleep.urbanwhispers</string>
+</resources>

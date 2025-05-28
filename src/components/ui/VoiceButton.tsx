@@ -1,8 +1,8 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { voiceManager } from '@/lib/voice-manager';
 
 interface VoiceButtonProps {
   onStart?: () => void;
@@ -12,14 +12,40 @@ interface VoiceButtonProps {
 
 const VoiceButton = ({ onStart, onStop, className }: VoiceButtonProps) => {
   const [isRecording, setIsRecording] = useState(false);
+  const isMountedRef = useRef(true);
 
-  const toggleRecording = () => {
-    if (isRecording) {
-      setIsRecording(false);
-      onStop?.();
-    } else {
-      setIsRecording(true);
-      onStart?.();
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (isRecording) {
+        voiceManager.stopRecording().catch(console.error);
+      }
+    };
+  }, [isRecording]);
+
+  const toggleRecording = async () => {
+    try {
+      if (!isMountedRef.current) return;
+
+      if (isRecording) {
+        await voiceManager.stopRecording();
+        if (isMountedRef.current) {
+          setIsRecording(false);
+          onStop?.();
+        }
+      } else {
+        const success = await voiceManager.startRecording();
+        if (success && isMountedRef.current) {
+          setIsRecording(true);
+          onStart?.();
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling recording:', error);
+      if (isMountedRef.current) {
+        setIsRecording(false);
+      }
     }
   };
 
