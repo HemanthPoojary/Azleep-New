@@ -12,9 +12,10 @@ import SleepCastPage from "./pages/SleepCastPage";
 import DailyCheckInPage from "./pages/DailyCheckInPage";
 import LandingPage from "./pages/LandingPage";
 import JournalPage from "./pages/JournalPage";
-import VoiceInteractionPage from "./pages/VoiceInteractionPage";
-import VoiceFirstSleepAssistant from "./pages/VoiceFirstSleepAssistant";
+import { StorageDemo } from "./pages/StorageDemo";
 import { AuthProvider } from "./contexts/AuthContext";
+import FloatingAssistant from "./components/sleep/FloatingAssistant";
+import { ElevenLabsDemo } from "./pages/ElevenLabsDemo";
 
 const queryClient = new QueryClient();
 
@@ -37,13 +38,12 @@ const App = () => (
             <Route path="/app/check-in" element={<DailyCheckInPage />} />
             <Route path="/app/sleep-cast" element={<SleepCastPage />} />
             <Route path="/app/journal" element={<JournalPage />} />
-            <Route path="/app/voice" element={<VoiceInteractionPage />} />
-            <Route path="/app/sleep-assistant" element={<VoiceFirstSleepAssistant />} />
+            <Route path="/app/storage" element={<StorageDemo />} />
+            <Route path="/app/elevenlabs" element={<ElevenLabsDemo />} />
             
             {/* Legacy routes for backward compatibility */}
             <Route path="/onboarding" element={<Navigate to="/app/onboarding" />} />
             <Route path="/dashboard" element={<Navigate to="/app/dashboard" />} />
-            <Route path="/voice" element={<Navigate to="/app/voice" />} />
             <Route path="/sleep-cast" element={<Navigate to="/app/sleep-cast" />} />
             <Route path="/stats" element={<Navigate to="/app/dashboard" />} />
             <Route path="/journal" element={<Navigate to="/app/journal" />} />
@@ -54,6 +54,9 @@ const App = () => (
             {/* Handle 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          
+          {/* Floating voice assistant */}
+          <FloatingAssistant />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

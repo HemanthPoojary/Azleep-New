@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -12,6 +11,7 @@ import {
 import { navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
 import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import SleepGenieButton from '@/components/sleep/SleepGenieButton';
 
 const AppNavigationMenu: React.FC = () => {
   return (
@@ -23,9 +23,16 @@ const AppNavigationMenu: React.FC = () => {
           </NavigationMenuTrigger>
           <NavigationMenuContent>
             <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-              <ListItem href="/app/voice" title="Voice AI">
-                Talk to our AI sleep coach to get personalized sleep advice
-              </ListItem>
+              <li className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-purple-400/20">
+                <div className="flex items-center text-white font-medium mb-2">
+                  <span>Voice AI</span>
+                  <ChevronRight className="ml-auto h-4 w-4 opacity-60" />
+                </div>
+                <p className="text-sm leading-snug text-white/70 line-clamp-2 mb-3">
+                  Talk to our AI sleep coach to get personalized sleep advice
+                </p>
+                <SleepGenieButton className="w-full" />
+              </li>
               <ListItem href="/app/sleep-cast" title="Sleep Cast">
                 Drift off with relaxing stories and soundscapes
               </ListItem>

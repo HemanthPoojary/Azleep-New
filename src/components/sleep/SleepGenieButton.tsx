@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { Button, ButtonProps } from '@/components/ui/button';
-import { MessageCircle } from 'lucide-react';
+import { Mic } from 'lucide-react';
 import SleepGenieDialog from './SleepGenieDialog';
 
 interface SleepGenieButtonProps extends ButtonProps {
@@ -9,7 +8,7 @@ interface SleepGenieButtonProps extends ButtonProps {
 }
 
 const SleepGenieButton: React.FC<SleepGenieButtonProps> = ({ 
-  label = "Talk to Sleep Genie", 
+  label = "Talk to AI Sleep Genie", 
   className,
   ...props 
 }) => {
@@ -18,12 +17,14 @@ const SleepGenieButton: React.FC<SleepGenieButtonProps> = ({
   return (
     <>
       <Button 
+        variant="outline"
+        size="lg"
         onClick={() => setIsDialogOpen(true)}
         className={className}
         {...props}
       >
-        <MessageCircle className="mr-2 h-5 w-5" />
-        {label}
+        <Mic className="h-6 w-6 mr-4 text-azleep-primary" />
+        <span className="text-lg">{label}</span>
       </Button>
       
       <SleepGenieDialog 

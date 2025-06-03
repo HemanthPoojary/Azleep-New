@@ -1,142 +1,250 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import VoiceButton from '@/components/ui/VoiceButton';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
-import { ArrowLeft } from 'lucide-react';
+import { Volume2, VolumeX, Mic } from 'lucide-react';
+import vapi from '@/config/vapi';
 
-// Emojis and their corresponding moods
-const moods = [
-  { emoji: "😊", name: "Happy", color: "bg-yellow-500" },
-  { emoji: "😴", name: "Tired", color: "bg-blue-500" },
-  { emoji: "😔", name: "Sad", color: "bg-purple-500" },
-  { emoji: "😭", name: "Upset", color: "bg-red-500" },
-  { emoji: "😴", name: "Sleepy", color: "bg-indigo-500" },
-];
+const SILENCE_TIMEOUT = 5000; // 5 seconds of silence before stopping
 
-interface SleepGenieDialogProps {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
-const SleepGenieDialog = ({ isOpen, onOpenChange }: SleepGenieDialogProps) => {
-  const [selectedMood, setSelectedMood] = useState<string | null>(null);
+const SleepGenieDialog = ({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: (open: boolean) => void }) => {
   const [conversation, setConversation] = useState<{sender: string, text: string}[]>([]);
   const [isListening, setIsListening] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
-  const [step, setStep] = useState<'mood' | 'conversation'>('mood');
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [currentTranscription, setCurrentTranscription] = useState('');
+  const callRef = useRef<any>(null);
+  const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasInitializedRef = useRef(false);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // Reset state when dialog closes
+  // Scroll to bottom when conversation updates
   useEffect(() => {
-    if (!isOpen) {
-      setTimeout(() => {
-        setSelectedMood(null);
-        setConversation([]);
-        setStep('mood');
-      }, 300);
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [conversation, currentTranscription]);
+
+  // Initialize voice chat when dialog opens
+  useEffect(() => {
+    if (isOpen && !callRef.current) {
+      initializeCall();
     }
   }, [isOpen]);
 
-  const handleMoodSelect = (mood: string) => {
-    setSelectedMood(mood);
-    
-    // Move to conversation step with initial message
-    const initialMessage = getInitialMessageForMood(mood);
-    setConversation([{ sender: 'ai', text: initialMessage }]);
-    setStep('conversation');
-    
-    toast(`You're feeling ${mood.toLowerCase()}. Let's talk about it.`);
+  // Cleanup when dialog closes or component unmounts
+  useEffect(() => {
+    if (!isOpen) {
+      cleanup();
+      hasInitializedRef.current = false;
+    }
+    return () => {
+      cleanup();
+      hasInitializedRef.current = false;
+    };
+  }, [isOpen]);
+
+  const cleanup = () => {
+    if (callRef.current) {
+      try {
+        // Stop any ongoing speech
+        callRef.current.stop();
+        
+        // Remove all event listeners
+        const events = ['speech-start', 'speech-end', 'call-start', 'call-end', 'volume-level', 'message', 'error'];
+        events.forEach(event => {
+          try {
+            if (callRef.current && typeof callRef.current.off === 'function') {
+              callRef.current.off(event);
+            }
+          } catch (e) {
+            console.error(`Error removing ${event} listener:`, e);
+          }
+        });
+      } catch (e) {
+        console.error('Error stopping call:', e);
+      }
+      callRef.current = null;
+    }
+    if (silenceTimeoutRef.current) {
+      clearTimeout(silenceTimeoutRef.current);
+      silenceTimeoutRef.current = null;
+    }
+    setConversation([]);
+    setIsListening(false);
+    setIsSpeaking(false);
+    setCurrentTranscription('');
   };
-  
-  const getInitialMessageForMood = (mood: string) => {
-    switch(mood.toLowerCase()) {
-      case 'happy':
-        return "I'm glad you're feeling happy! What made your day special?";
-      case 'tired':
-      case 'sleepy':
-        return "I notice you're feeling tired. What's been affecting your energy today?";
-      case 'sad':
-        return "I'm sorry to hear you're feeling sad. Would you like to talk about what's on your mind?";
-      case 'upset':
-        return "I understand you're feeling upset. Is there something specific that happened today?";
-      default:
-        return "How can I help you with your sleep tonight?";
+
+  const startInitialGreeting = () => {
+    if (!hasInitializedRef.current && callRef.current) {
+      hasInitializedRef.current = true;
+      const welcomeMessage = "Hi, I'm your AI Sleep Genie. How can I help you sleep better tonight?";
+      setConversation([{ sender: 'ai', text: welcomeMessage }]);
+      
+      // Use the say method to speak the welcome message
+      try {
+        if (typeof callRef.current.say === 'function') {
+          callRef.current.say(welcomeMessage);
+        }
+      } catch (e) {
+        console.error('Error saying welcome message:', e);
+      }
     }
   };
 
-  const handleStartListening = () => {
+  const initializeCall = async () => {
+    try {
+      // Initialize and start immediately
+      const call = await vapi.start(import.meta.env.VITE_VAPI_ASSISTANT_ID);
+      
+      if (!call) {
+        console.error("Failed to initialize Vapi call");
+        toast.error("Sorry, I couldn't start the voice chat. Please try again.");
+        return;
+      }
+
+      // Cast to any since the SDK doesn't export proper types
+      const vapiCall = call as any;
+      callRef.current = vapiCall;
+
+      // Set up event listeners
+      if (vapiCall && typeof vapiCall.on === 'function') {
+        vapiCall.on('speech-start', () => {
+          setIsSpeaking(true);
+        });
+
+        vapiCall.on('speech-end', () => {
+          setIsSpeaking(false);
+        });
+
+        vapiCall.on('call-start', () => {
     setIsListening(true);
-    toast("Listening... tell me how I can help with your sleep.");
+          toast("Listening...");
+          resetSilenceTimeout();
+        });
+
+        vapiCall.on('call-end', () => {
+          setIsListening(false);
+          setCurrentTranscription('');
+          if (silenceTimeoutRef.current) {
+            clearTimeout(silenceTimeoutRef.current);
+            silenceTimeoutRef.current = null;
+          }
+        });
+
+        vapiCall.on('volume-level', (volume: number) => {
+          // Optional: Use volume level for UI feedback
+          console.log('Volume level:', volume);
+        });
+
+        vapiCall.on('message', (message: any) => {
+          if (message.type === 'transcript') {
+            setCurrentTranscription(message.content);
+          } else if (message.role === "assistant") {
+            setConversation(prev => [...prev, { sender: 'ai', text: message.content }]);
+          } else if (message.role === "user") {
+            setConversation(prev => [...prev, { sender: 'user', text: message.content }]);
+            setCurrentTranscription(''); // Clear transcription when message is finalized
+            resetSilenceTimeout();
+          }
+        });
+
+        vapiCall.on('error', (error: any) => {
+          console.error("Vapi error:", error);
+          toast.error("Sorry, I had trouble understanding. Could you try again?");
+          if (silenceTimeoutRef.current) {
+            clearTimeout(silenceTimeoutRef.current);
+            silenceTimeoutRef.current = null;
+          }
+        });
+      }
+
+      // Start the initial greeting
+      startInitialGreeting();
+    } catch (error) {
+      console.error('Error initializing call:', error);
+      toast.error("Sorry, I couldn't start the voice chat. Please try again.");
+    }
   };
 
-  const handleStopListening = () => {
-    setIsListening(false);
-    
-    // Simulate user input
-    const userMessages = [
-      "I'm having trouble falling asleep tonight.",
-      "I've been feeling stressed about work lately.",
-      "Can you help me relax before bed?",
-      "I keep waking up in the middle of the night."
-    ];
-    const randomUserMessage = userMessages[Math.floor(Math.random() * userMessages.length)];
-    
-    setConversation(prev => [...prev, { sender: 'user', text: randomUserMessage }]);
-    
-    // Simulate AI thinking and response
-    setIsThinking(true);
-    setTimeout(() => {
-      const aiResponses = [
-        "I understand that falling asleep can be challenging. Try the 4-7-8 breathing technique: inhale for 4 seconds, hold for 7 seconds, and exhale for 8 seconds. This helps calm your nervous system.",
-        "Work stress can definitely affect your sleep. Consider writing down your worries before bed to clear your mind. Would you like me to guide you through a quick relaxation exercise?",
-        "I'd be happy to help you relax. Let's start with a simple body scan. Close your eyes and bring awareness to your toes, gradually moving up through your body, releasing tension as you go.",
-        "Waking up at night is common. Make sure your room is cool, dark, and quiet. Avoid looking at the time as it can increase anxiety. Would you like me to recommend a sleep cast for deeper sleep?"
-      ];
-      const randomAiResponse = aiResponses[Math.floor(Math.random() * aiResponses.length)];
-      
-      setConversation(prev => [...prev, { sender: 'ai', text: randomAiResponse }]);
-      setIsThinking(false);
-    }, 2000);
+  const resetSilenceTimeout = () => {
+    if (silenceTimeoutRef.current) {
+      clearTimeout(silenceTimeoutRef.current);
+    }
+    silenceTimeoutRef.current = setTimeout(() => {
+      if (callRef.current && isListening) {
+        try {
+          if (typeof callRef.current.stop === 'function') {
+            callRef.current.stop();
+            toast("Stopped listening due to silence");
+          }
+        } catch (e) {
+          console.error('Error stopping call:', e);
+        }
+      }
+    }, SILENCE_TIMEOUT);
+  };
+
+  const handleVoiceToggle = () => {
+    if (!callRef.current) {
+      initializeCall();
+      return;
+    }
+
+    try {
+      if (isListening) {
+        if (typeof callRef.current.stop === 'function') {
+          callRef.current.stop();
+          if (silenceTimeoutRef.current) {
+            clearTimeout(silenceTimeoutRef.current);
+            silenceTimeoutRef.current = null;
+          }
+        }
+      } else {
+        if (typeof callRef.current.start === 'function') {
+          callRef.current.start();
+        }
+      }
+    } catch (e) {
+      console.error('Error toggling voice:', e);
+      toast.error("Sorry, something went wrong. Please try again.");
+    }
+  };
+
+  const toggleMute = () => {
+    if (callRef.current) {
+      try {
+        const newMutedState = !isMuted;
+        if (typeof callRef.current.setMuted === 'function') {
+          callRef.current.setMuted(newMutedState);
+          setIsMuted(newMutedState);
+          toast(newMutedState ? "Voice disabled" : "Voice enabled");
+        }
+      } catch (e) {
+        console.error('Error toggling mute:', e);
+      }
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[80vh] bg-azleep-dark text-white border-none">
+      <DialogContent className="sm:max-w-[425px] max-h-[70vh] bg-azleep-dark text-white border-none">
         <DialogHeader>
-          {step === 'conversation' && (
+          <DialogTitle className="text-center text-white">AI Sleep Genie</DialogTitle>
             <Button 
               variant="ghost" 
               size="icon" 
-              onClick={() => setStep('mood')}
-              className="absolute left-4 top-4 text-white"
+            onClick={toggleMute}
+            className="absolute right-4 top-4 text-white"
             >
-              <ArrowLeft className="h-5 w-5" />
+            {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
             </Button>
-          )}
-          <DialogTitle className="text-center text-white">AI Sleep Genie</DialogTitle>
         </DialogHeader>
         
-        {step === 'mood' ? (
-          <div className="py-6">
-            <h2 className="text-lg font-medium text-center mb-6">How are you feeling today?</h2>
-            
-            <div className="flex justify-center gap-4">
-              {moods.map((mood, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleMoodSelect(mood.name)}
-                  className={`flex flex-col items-center justify-center p-4 rounded-full transition-all hover:scale-110 ${mood.color} shadow-lg`}
-                >
-                  <span className="text-3xl">{mood.emoji}</span>
-                  <span className="text-xs mt-2 font-medium">{mood.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
           <div className="flex flex-col h-[50vh]">
-            <div className="flex-1 space-y-4 overflow-y-auto p-4">
+          <div ref={chatContainerRef} className="flex-1 space-y-4 overflow-y-auto p-4">
               {conversation.map((message, index) => (
                 <div 
                   key={index} 
@@ -153,6 +261,15 @@ const SleepGenieDialog = ({ isOpen, onOpenChange }: SleepGenieDialogProps) => {
                   </div>
                 </div>
               ))}
+            
+            {/* Live transcription */}
+            {currentTranscription && (
+              <div className="flex justify-end animate-fade-in">
+                <div className="max-w-[80%] rounded-xl px-4 py-2 bg-azleep-primary/50 text-white">
+                  <p className="italic">{currentTranscription}</p>
+                </div>
+              </div>
+            )}
               
               {isThinking && (
                 <div className="flex justify-start">
@@ -165,21 +282,27 @@ const SleepGenieDialog = ({ isOpen, onOpenChange }: SleepGenieDialogProps) => {
               )}
             </div>
             
-            <div className="flex items-center justify-center py-4">
-              <VoiceButton 
-                onStart={handleStartListening}
-                onStop={handleStopListening}
-                className="h-16 w-16"
-              />
+          <div className="flex items-center justify-center p-4 border-t border-white/10">
+            <Button
+              onClick={handleVoiceToggle}
+              className={`h-14 w-14 rounded-full transition-all ${
+                isListening 
+                  ? 'bg-azleep-primary animate-pulse' 
+                  : 'bg-muted hover:bg-azleep-primary/80'
+              }`}
+            >
+              <Mic className={`h-6 w-6 ${isListening ? 'text-white' : 'text-white/80'}`} />
+            </Button>
               
               <p className="text-sm text-muted-foreground ml-4">
                 {isListening 
                   ? "Listening... Speak clearly"
-                  : "Tap the microphone to ask me anything about sleep"}
+                : isSpeaking
+                ? "Speaking..."
+                : "Tap the microphone to talk with Sleep Genie"}
               </p>
             </div>
           </div>
-        )}
       </DialogContent>
     </Dialog>
   );
