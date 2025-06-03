@@ -2,11 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/components/ui/sonner';
-import { Mic, Send, PenLine, Star } from 'lucide-react';
+import { Mic, MicOff, Send, PenLine, Star, Sparkles, Heart } from 'lucide-react';
 import VoiceButton from '@/components/ui/VoiceButton';
 import { supabase } from '@/integrations/supabase/client';
+import { AutoSaveIndicator } from '@/components/AutoSaveIndicator';
+import { Badge } from '@/components/ui/badge';
+import { voiceManager } from '@/lib/voice-manager';
 
 interface VoiceJournalProps {
   initialMood?: string;
@@ -19,6 +22,10 @@ const VoiceJournal: React.FC<VoiceJournalProps> = ({ initialMood, onEntrySaved }
   const [isRecording, setIsRecording] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [mood, setMood] = useState(initialMood || 'Reflective');
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'saving' | 'saved' | 'error' | 'idle'>('idle');
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
   const { user } = useAuth();
 
   // Initialize conversation based on selected mood
@@ -122,30 +129,43 @@ const VoiceJournal: React.FC<VoiceJournalProps> = ({ initialMood, onEntrySaved }
     }, 1000);
   };
 
-  const handleVoiceStart = () => {
+  const handleVoiceStart = async () => {
     setIsRecording(true);
     toast("Listening... speak clearly.");
+    
+    try {
+      const success = await voiceManager.startRecording({
+        onSpeechResult: (text) => {
+          setInput((prev) => prev + ' ' + text);
+        },
+        onSpeechStart: () => {
+          toast("Started listening...");
+        },
+        onSpeechEnd: () => {
+          toast("Processing your voice...");
+        }
+      });
+      
+      if (!success) {
+        setIsRecording(false);
+        toast.error("Could not start voice recording. Please check your microphone permissions.");
+      }
+    } catch (error) {
+      console.error('Error starting voice recording:', error);
+      setIsRecording(false);
+      toast.error("Failed to start voice recording. Please try again.");
+    }
   };
 
-  const handleVoiceStop = () => {
-    setIsRecording(false);
-    
-    // Simulate voice transcription (in a real app, this would use a voice recognition API)
-    setIsLoading(true);
-    setTimeout(() => {
-      const placeholderTexts = [
-        "Today was quite challenging at work, but I managed to get through it.",
-        "I'm feeling a bit tired, but overall it was a good day.",
-        "I had a great conversation with an old friend today.",
-        "I'm looking forward to getting some rest tonight.",
-        "I'm worried about my presentation tomorrow."
-      ];
-      
-      const transcribedText = placeholderTexts[Math.floor(Math.random() * placeholderTexts.length)];
-      setInput(transcribedText);
-      setIsLoading(false);
+  const handleVoiceStop = async () => {
+    try {
+      await voiceManager.stopRecording();
+      setIsRecording(false);
       toast("Voice captured! You can edit before sending.");
-    }, 1500);
+    } catch (error) {
+      console.error('Error stopping voice recording:', error);
+      toast.error("Failed to stop recording. Please try again.");
+    }
   };
 
   const saveJournalEntry = async (content: string) => {
@@ -154,7 +174,7 @@ const VoiceJournal: React.FC<VoiceJournalProps> = ({ initialMood, onEntrySaved }
     try {
       console.log("Attempting to save journal entry");
       console.log("Content:", content.substring(0, 20) + "...");
-      console.log("Mood:", initialMood || 'Reflective');
+      console.log("Mood:", mood);
       
       const guestId = "guest_" + Math.random().toString(36).substring(2, 15);
       
@@ -163,8 +183,8 @@ const VoiceJournal: React.FC<VoiceJournalProps> = ({ initialMood, onEntrySaved }
         .insert({
           user_id: user?.id || guestId, // Use user ID if logged in, otherwise use a guest ID
           content,
-          mood: initialMood || 'Reflective',
-          title: `Journal conversation - ${new Date().toLocaleDateString()}`
+          mood,
+          title: `Voice journal - ${new Date().toLocaleDateString()}`
         });
       
       if (error) {
@@ -183,87 +203,196 @@ const VoiceJournal: React.FC<VoiceJournalProps> = ({ initialMood, onEntrySaved }
     }
   };
 
+  // Auto-save functionality
+  useEffect(() => {
+    if (!input.trim() || !user) return;
+
+    // Clear existing timeout
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    // Set new timeout for auto-save
+    autoSaveTimeoutRef.current = setTimeout(async () => {
+      setAutoSaveStatus('saving');
+      
+      try {
+        const { error } = await supabase
+          .from('journal_entries')
+          .insert({
+            user_id: user.id,
+            content: input.trim(),
+            title: `Voice journal - ${new Date().toLocaleDateString()}`,
+            mood: mood
+          });
+
+        if (error) throw error;
+
+        setAutoSaveStatus('saved');
+        setLastSaved(new Date());
+        
+        // Reset status after 3 seconds
+        setTimeout(() => setAutoSaveStatus('idle'), 3000);
+        
+      } catch (error) {
+        console.error('Auto-save error:', error);
+        setAutoSaveStatus('error');
+        setTimeout(() => setAutoSaveStatus('idle'), 3000);
+      }
+    }, 2000); // Auto-save after 2 seconds of inactivity
+
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [input, mood, user]);
+
+  const handleManualSave = async () => {
+    if (!input.trim()) {
+      toast.error('Please write something first');
+      return;
+    }
+
+    if (!user) {
+      toast.error('Please sign in to save your journal entry');
+      return;
+    }
+
+    setAutoSaveStatus('saving');
+
+    try {
+      const { error } = await supabase
+        .from('journal_entries')
+        .insert({
+          user_id: user.id,
+          content: input.trim(),
+          title: `Voice journal - ${new Date().toLocaleDateString()}`,
+          mood: mood
+        });
+
+      if (error) throw error;
+
+      setAutoSaveStatus('saved');
+      setLastSaved(new Date());
+      setInput(''); // Clear input after manual save
+      
+      if (onEntrySaved) {
+        onEntrySaved();
+      }
+
+      toast.success('Journal entry saved successfully! ✨', {
+        description: `Your ${mood.toLowerCase()} thoughts have been recorded.`
+      });
+
+      // Reset status after 3 seconds
+      setTimeout(() => setAutoSaveStatus('idle'), 3000);
+      
+    } catch (error) {
+      console.error('Error saving journal entry:', error);
+      setAutoSaveStatus('error');
+      toast.error('Failed to save journal entry', {
+        description: 'Please try again or check your connection.'
+      });
+      setTimeout(() => setAutoSaveStatus('idle'), 3000);
+    }
+  };
+
+  const moodOptions = ['Happy', 'Grateful', 'Peaceful', 'Reflective', 'Anxious', 'Tired', 'Sad'];
+
   return (
-    <div className="flex flex-col h-full">
-      {/* Chat messages */}
-      <div className="flex-1 overflow-y-auto mb-4 space-y-4">
-        {messages.map((message, index) => (
-          <div 
-            key={index} 
-            className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
-          >
-            <div 
-              className={`max-w-[85%] rounded-2xl px-4 py-2 ${
-                message.sender === 'user' 
-                  ? 'bg-azleep-primary text-white' 
-                  : 'bg-white/10 backdrop-blur-sm text-white border border-white/10'
-              }`}
-            >
-              <p>{message.text}</p>
-            </div>
-          </div>
-        ))}
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-white/10 backdrop-blur-sm text-white border border-white/10 rounded-2xl px-4 py-3">
-              <div className="flex gap-2">
-                <span className="w-2 h-2 rounded-full bg-azleep-primary animate-pulse"></span>
-                <span className="w-2 h-2 rounded-full bg-azleep-primary animate-pulse" style={{ animationDelay: '0.2s' }}></span>
-                <span className="w-2 h-2 rounded-full bg-azleep-primary animate-pulse" style={{ animationDelay: '0.4s' }}></span>
-              </div>
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-      
-      {/* Input area */}
-      <Card className="bg-white/10 backdrop-blur-sm border-white/10">
-        <div className="flex items-center p-2">
-          <VoiceButton 
-            onStart={handleVoiceStart}
-            onStop={handleVoiceStop}
-            className="mr-2"
-          />
-          
-          <Textarea 
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Tell me about your day..."
-            className="flex-1 h-12 py-3 resize-none bg-transparent border-none text-white placeholder:text-white/50 focus-visible:ring-0"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-          />
-          
-          <Button 
-            onClick={handleSendMessage}
-            className="bg-azleep-primary hover:bg-azleep-primary/80 ml-2"
-            disabled={!input.trim() || isLoading}
-          >
-            <Send className="h-5 w-5" />
-          </Button>
+    <div className="space-y-6">
+      {/* Header with mood selection */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Heart className="h-5 w-5 text-pink-400" />
+          <h3 className="text-xl font-semibold text-white">Voice Journal</h3>
         </div>
-      </Card>
-      
-      {/* Journal rating (optional) */}
-      <div className="flex justify-between items-center mt-4">
-        <div className="text-sm text-white/70">Rate today's reflection</div>
-        <div className="flex space-x-1">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <Button 
-              key={star}
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 text-white/70 hover:text-yellow-400"
+        
+        <div className="flex items-center gap-3">
+          <AutoSaveIndicator 
+            status={autoSaveStatus}
+            lastSaved={lastSaved}
+            isConnected={true}
+          />
+        </div>
+      </div>
+
+      {/* Mood selector */}
+      <div className="space-y-2">
+        <label className="text-sm text-gray-300">How are you feeling?</label>
+        <div className="flex flex-wrap gap-2">
+          {moodOptions.map((moodOption) => (
+            <Badge
+              key={moodOption}
+              variant={mood === moodOption ? "default" : "outline"}
+              className={`cursor-pointer transition-all ${
+                mood === moodOption 
+                  ? 'bg-azleep-primary text-white' 
+                  : 'bg-white/5 text-white/70 hover:bg-white/10'
+              }`}
+              onClick={() => setMood(moodOption)}
             >
-              <Star className="h-5 w-5" />
-            </Button>
+              {moodOption}
+            </Badge>
           ))}
         </div>
+      </div>
+
+      {/* Text area with enhanced styling */}
+      <Card className="bg-white/5 border-white/10">
+        <CardContent className="p-4">
+          <Textarea
+            placeholder={
+              initialMood 
+                ? `You mentioned feeling ${initialMood.toLowerCase()}. Tell me more about that...` 
+                : "What's on your mind? Share your thoughts, feelings, or experiences..."
+            }
+            className="min-h-[200px] bg-transparent border-none text-white placeholder:text-white/50 resize-none focus:ring-0 focus:outline-none"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Action buttons */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <VoiceButton
+            onStart={handleVoiceStart}
+            onStop={handleVoiceStop}
+            className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+          />
+          
+          {input.trim() && autoSaveStatus === 'idle' && (
+            <span className="text-xs text-gray-400">
+              Changes saved automatically
+            </span>
+          )}
+        </div>
+
+        <Button
+          onClick={handleManualSave}
+          disabled={!input.trim() || autoSaveStatus === 'saving'}
+          className="bg-azleep-primary hover:bg-azleep-primary/80"
+        >
+          {autoSaveStatus === 'saving' ? (
+            <>
+              <Sparkles className="h-4 w-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Send className="h-4 w-4 mr-2" />
+              Save Entry
+            </>
+          )}
+        </Button>
+      </div>
+
+      {/* Usage hint */}
+      <div className="text-xs text-gray-400 text-center">
+        💡 Your thoughts are automatically saved as you type. Use manual save to finish and clear the editor.
       </div>
     </div>
   );
