@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Moon, Mic, Music, ArrowRight } from 'lucide-react';
@@ -12,6 +11,7 @@ import PersonalizedNudge from '@/components/sleep/PersonalizedNudge';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import SleepGenieButton from '@/components/sleep/SleepGenieButton';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -61,7 +61,7 @@ const Dashboard = () => {
       if (!user) throw new Error("User not authenticated");
       
       const { data, error } = await supabase
-        .from('sleep_records')
+        .from('sleep_tracking')
         .select('*')
         .eq('user_id', user.id)
         .order('sleep_date', { ascending: false })
@@ -105,7 +105,7 @@ const Dashboard = () => {
       
       dateMap.set(record.sleep_date, {
         day,
-        sleepHours: record.sleep_duration,
+        sleepHours: record.sleep_hours,
         date: record.sleep_date
       });
     });
@@ -152,14 +152,14 @@ const Dashboard = () => {
     
     try {
       // Parse sleep hours as a number
-      const duration = parseFloat(sleepHours);
+      const duration = sleepHours === "9+" ? 9 : parseInt(sleepHours);
       
       // Get today's date in YYYY-MM-DD format
       const today = new Date().toISOString().split('T')[0];
       
       // Check if we already have a record for today
       const { data: existingRecord } = await supabase
-        .from('sleep_records')
+        .from('sleep_tracking')
         .select('id')
         .eq('user_id', user.id)
         .eq('sleep_date', today)
@@ -168,20 +168,20 @@ const Dashboard = () => {
       if (existingRecord) {
         // Update existing record
         await supabase
-          .from('sleep_records')
+          .from('sleep_tracking')
           .update({ 
-            sleep_duration: duration,
-            sleep_quality: sleepQuality
+            sleep_hours: duration,
+            sleep_quality: sleepQuality.charAt(0).toUpperCase() + sleepQuality.slice(1)
           })
           .eq('id', existingRecord.id);
       } else {
         // Insert new record
         await supabase
-          .from('sleep_records')
+          .from('sleep_tracking')
           .insert({ 
             user_id: user.id,
-            sleep_duration: duration,
-            sleep_quality: sleepQuality,
+            sleep_hours: duration,
+            sleep_quality: sleepQuality.charAt(0).toUpperCase() + sleepQuality.slice(1),
             sleep_date: today
           });
       }
@@ -209,7 +209,7 @@ const Dashboard = () => {
     }
     
     const completedSessions = sleepData.length;
-    const totalMinutes = sleepData.reduce((sum, record) => sum + (record.sleep_duration * 60), 0);
+    const totalMinutes = sleepData.reduce((sum, record) => sum + (record.sleep_hours * 60), 0);
     
     // Calculate average sleep time
     const avgSleepHours = totalMinutes / completedSessions / 60;
@@ -221,8 +221,8 @@ const Dashboard = () => {
       const previousSleep = sleepData.slice(3, 7);
       
       if (previousSleep.length > 0) {
-        const recentAvg = recentSleep.reduce((sum, record) => sum + record.sleep_duration, 0) / recentSleep.length;
-        const previousAvg = previousSleep.reduce((sum, record) => sum + record.sleep_duration, 0) / previousSleep.length;
+        const recentAvg = recentSleep.reduce((sum, record) => sum + record.sleep_hours, 0) / recentSleep.length;
+        const previousAvg = previousSleep.reduce((sum, record) => sum + record.sleep_hours, 0) / previousSleep.length;
         
         improvementPercent = Math.round(((recentAvg - previousAvg) / previousAvg) * 100);
       }
@@ -340,15 +340,9 @@ const Dashboard = () => {
         </div>
         
         <div className="grid gap-4 mb-8 md:grid-cols-2 lg:grid-cols-3">
-          <Button 
-            variant="outline" 
-            size="lg" 
+          <SleepGenieButton 
             className="sleep-card h-20 justify-start hover-scale"
-            onClick={() => navigate('/app/check-in')}
-          >
-            <Mic className="h-6 w-6 mr-4 text-azleep-primary" />
-            <span className="text-lg">Talk to AI Sleep Genie</span>
-          </Button>
+          />
           
           <Button 
             variant="outline" 
