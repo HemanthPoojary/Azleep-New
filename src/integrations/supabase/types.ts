@@ -171,20 +171,66 @@ export type Database = {
         }
         Relationships: []
       }
+      sleep_tracking: {
+        Row: {
+          id: string
+          user_id: string
+          sleep_date: string
+          sleep_hours: number | null
+          sleep_quality: number | null
+          bedtime: string | null
+          wake_time: string | null
+          notes: string | null
+          mood_before_sleep: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          sleep_date?: string
+          sleep_hours?: number | null
+          sleep_quality?: number | null
+          bedtime?: string | null
+          wake_time?: string | null
+          notes?: string | null
+          mood_before_sleep?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          sleep_date?: string
+          sleep_hours?: number | null
+          sleep_quality?: number | null
+          bedtime?: string | null
+          wake_time?: string | null
+          notes?: string | null
+          mood_before_sleep?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           age: number | null
           avatar_url: string | null
           bedtime_target: string | null
           created_at: string
+          daily_points: number | null
           first_name: string | null
           id: string
+          last_activity_date: string | null
           last_name: string | null
           occupation: string | null
           onboarding_completed: boolean | null
+          relaxation_points: number | null
           settings: Json | null
           sleep_goals: string[] | null
           sleep_issues: string[] | null
+          streak_days: number | null
           updated_at: string
           username: string | null
           waketime_target: string | null
@@ -194,14 +240,18 @@ export type Database = {
           avatar_url?: string | null
           bedtime_target?: string | null
           created_at?: string
+          daily_points?: number | null
           first_name?: string | null
           id: string
+          last_activity_date?: string | null
           last_name?: string | null
           occupation?: string | null
           onboarding_completed?: boolean | null
+          relaxation_points?: number | null
           settings?: Json | null
           sleep_goals?: string[] | null
           sleep_issues?: string[] | null
+          streak_days?: number | null
           updated_at?: string
           username?: string | null
           waketime_target?: string | null
@@ -211,14 +261,18 @@ export type Database = {
           avatar_url?: string | null
           bedtime_target?: string | null
           created_at?: string
+          daily_points?: number | null
           first_name?: string | null
           id?: string
+          last_activity_date?: string | null
           last_name?: string | null
           occupation?: string | null
           onboarding_completed?: boolean | null
+          relaxation_points?: number | null
           settings?: Json | null
           sleep_goals?: string[] | null
           sleep_issues?: string[] | null
+          streak_days?: number | null
           updated_at?: string
           username?: string | null
           waketime_target?: string | null

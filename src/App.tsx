@@ -17,13 +17,21 @@ import DreamNarrativesPage from "./pages/DreamNarrativesPage";
 import VoiceInteractionPage from "./pages/VoiceInteractionPage";
 import VoiceFirstSleepAssistant from "./pages/VoiceFirstSleepAssistant";
 import { AuthProvider } from "./contexts/AuthContext";
+import { useRealtimeSync } from "./hooks/useRealtimeSync";
 
 const queryClient = new QueryClient();
+
+// Component to handle real-time sync
+const RealtimeSync: React.FC = () => {
+  useRealtimeSync();
+  return null;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
+        <RealtimeSync />
         <Toaster />
         <Sonner />
         <BrowserRouter>
