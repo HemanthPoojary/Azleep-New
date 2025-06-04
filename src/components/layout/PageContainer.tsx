@@ -7,6 +7,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Home, MessageCircle, Music, BookOpen, Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import DreamNarrativesPage from '@/pages/DreamNarrativesPage';
 
 interface PageContainerProps {
   children: ReactNode;
@@ -64,6 +65,11 @@ const PageContainer = ({
     {
       path: '/app/journal',
       label: 'Journal',
+      icon: BookOpen
+    },
+    {
+      path: '/app/dream-narratives',
+      label: 'Dream Narratives',
       icon: BookOpen
     }
   ];
