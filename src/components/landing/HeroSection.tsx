@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -53,7 +52,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
       
       <div className="container mx-auto text-center z-10 relative">
         <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold mb-4 text-white leading-tight font-sans py-0 my-0 mx-0">
-          Sleep Better with Azleep's AI Web App
+          Sleep Better with Azleep's AI
         </h1>
         <p className="text-lg md:text-xl text-gray-200 mb-6 max-w-2xl mx-auto">
           Access AI-driven sleep solutions instantly in your browser.
