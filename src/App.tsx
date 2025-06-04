@@ -12,6 +12,8 @@ import SleepCastPage from "./pages/SleepCastPage";
 import DailyCheckInPage from "./pages/DailyCheckInPage";
 import LandingPage from "./pages/LandingPage";
 import JournalPage from "./pages/JournalPage";
+import AuthPage from "./pages/AuthPage";
+import DreamNarrativesPage from "./pages/DreamNarrativesPage";
 import VoiceInteractionPage from "./pages/VoiceInteractionPage";
 import VoiceFirstSleepAssistant from "./pages/VoiceFirstSleepAssistant";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -29,6 +31,9 @@ const App = () => (
             {/* Landing page is the main entry point */}
             <Route path="/" element={<LandingPage />} />
             
+            {/* Auth route for direct login */}
+            <Route path="/auth" element={<AuthPage />} />
+            
             {/* Web app routes */}
             <Route path="/app" element={<Navigate to="/app/onboarding" />} />
             <Route path="/app/onboarding" element={<OnboardingPage />} />
@@ -37,6 +42,7 @@ const App = () => (
             <Route path="/app/check-in" element={<DailyCheckInPage />} />
             <Route path="/app/sleep-cast" element={<SleepCastPage />} />
             <Route path="/app/journal" element={<JournalPage />} />
+            <Route path="/app/dream-narratives" element={<DreamNarrativesPage />} />
             <Route path="/app/voice" element={<VoiceInteractionPage />} />
             <Route path="/app/sleep-assistant" element={<VoiceFirstSleepAssistant />} />
             
@@ -47,6 +53,7 @@ const App = () => (
             <Route path="/sleep-cast" element={<Navigate to="/app/sleep-cast" />} />
             <Route path="/stats" element={<Navigate to="/app/dashboard" />} />
             <Route path="/journal" element={<Navigate to="/app/journal" />} />
+            <Route path="/dream-narratives" element={<Navigate to="/app/dream-narratives" />} />
             
             {/* Redirect old routes */}
             <Route path="/app/stats" element={<Navigate to="/app/dashboard" />} />
