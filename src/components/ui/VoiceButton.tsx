@@ -3,6 +3,7 @@ import { Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { voiceManager } from '@/lib/voice-manager';
+import ElevenLabsVoiceDialog from '@/components/sleep/ElevenLabsVoiceDialog';
 
 interface VoiceButtonProps {
   onStart?: () => void;
@@ -12,6 +13,7 @@ interface VoiceButtonProps {
 
 const VoiceButton = ({ onStart, onStop, className }: VoiceButtonProps) => {
   const [isRecording, setIsRecording] = useState(false);
+  const [showVoiceDialog, setShowVoiceDialog] = useState(false);
   const isMountedRef = useRef(true);
 
   // Cleanup on unmount
@@ -25,6 +27,7 @@ const VoiceButton = ({ onStart, onStop, className }: VoiceButtonProps) => {
   }, [isRecording]);
 
   const toggleRecording = async () => {
+    setShowVoiceDialog(true);
     try {
       if (!isMountedRef.current) return;
 
@@ -71,6 +74,7 @@ const VoiceButton = ({ onStart, onStop, className }: VoiceButtonProps) => {
       >
         <Mic className={cn("h-6 w-6", isRecording ? "animate-pulse" : "")} />
       </Button>
+      <ElevenLabsVoiceDialog open={showVoiceDialog} onOpenChange={setShowVoiceDialog} />
     </div>
   );
 };

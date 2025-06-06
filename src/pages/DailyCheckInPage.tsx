@@ -1,14 +1,16 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageContainer from '@/components/layout/PageContainer';
 import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
 import { toast } from '@/components/ui/sonner';
-import { Moon, BookOpen, Headphones, Heart, Star, Cloud } from 'lucide-react';
+import { Moon, BookOpen, Headphones, Heart, Star, Cloud, Loader2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRelaxationPoints } from '@/hooks/use-relaxation-points';
 import SleepGenieButton from '@/components/sleep/SleepGenieButton';
+import { AutoSaveIndicator } from '@/components/AutoSaveIndicator';
 
 // Emojis and their corresponding moods
 const moods = [
@@ -131,29 +133,100 @@ const moodSuggestions = {
 const DailyCheckInPage = () => {
   const navigate = useNavigate();
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
-  const { user } = useAuth();
+  const [stressLevel, setStressLevel] = useState<number[]>([5]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const { user, loading } = useAuth();
+  const { addPoints } = useRelaxationPoints();
+  
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/login');
+    }
+  }, [user, loading, navigate]);
+  
+  // Stress level descriptions
+  const getStressDescription = (level: number) => {
+    if (level <= 2) return "Very relaxed";
+    if (level <= 4) return "Calm";
+    if (level <= 6) return "Neutral";
+    if (level <= 8) return "Stressed";
+    return "Very stressed";
+  };
   
   const handleMoodSelect = async (index: number) => {
     setSelectedMood(index);
     const selectedMoodName = moods[index].name;
-    toast(`You're feeling ${selectedMoodName} tonight`);
     
-    // Save the mood selection to the database
-    if (user) {
-      try {
-        const { error } = await supabase
-          .from('mood_records')
-          .insert({
-            user_id: user.id,
-            mood: selectedMoodName,
-            notes: `Daily check-in: ${selectedMoodName}`
-          });
-        
-        if (error) throw error;
-      } catch (error) {
-        console.error('Error saving mood:', error);
-      }
+    // Auto-save mood and stress level
+    await saveMoodAndStress(selectedMoodName, stressLevel[0]);
+  };
+
+  const handleStressChange = async (value: number[]) => {
+    setStressLevel(value);
+    
+    // If a mood is already selected, auto-save the updated stress level
+    if (selectedMood !== null) {
+      const selectedMoodName = moods[selectedMood].name;
+      await saveMoodAndStress(selectedMoodName, value[0]);
     }
+  };
+
+  const saveMoodAndStress = async (mood: string, stress: number) => {
+    if (!user) return;
+
+    setSaveStatus('saving');
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('mood_records')
+        .insert({
+          user_id: user.id,
+          mood: mood,
+          stress_level: stress,
+          notes: `Daily check-in: ${mood} (Stress: ${stress}/10 - ${getStressDescription(stress)})`
+        });
+      
+      if (error) throw error;
+
+      // Add relaxation points for completing daily check-in
+      await addPoints(10, 'Daily Check-in');
+      
+      setSaveStatus('saved');
+      toast(`Mood and stress level saved! You're feeling ${mood} with ${getStressDescription(stress)} stress.`, {
+        duration: 4000,
+      });
+
+      // Reset save status after a delay
+      setTimeout(() => setSaveStatus('idle'), 3000);
+      
+    } catch (error) {
+      console.error('Error saving mood and stress:', error);
+      setSaveStatus('error');
+      toast('Failed to save your check-in. Please try again.', {
+        duration: 4000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCompleteCheckIn = async () => {
+    if (selectedMood === null) {
+      toast('Please select your mood first', {
+        duration: 3000,
+      });
+      return;
+    }
+
+    const selectedMoodName = moods[selectedMood].name;
+    await saveMoodAndStress(selectedMoodName, stressLevel[0]);
+    
+    // Navigate to suggestions or dashboard
+    setTimeout(() => {
+      navigate('/app/dashboard');
+    }, 1500);
   };
 
   const handleSuggestionClick = (suggestion: any) => {
@@ -212,6 +285,14 @@ const DailyCheckInPage = () => {
   return (
     <PageContainer>
       <div className="w-full max-w-3xl mx-auto px-4 animate-fade-in">
+        {/* Auto-save indicator */}
+        <div className="flex justify-end mb-4">
+          <AutoSaveIndicator 
+            status={saveStatus}
+            className="text-sm"
+          />
+        </div>
+
         {/* Header with greeting */}
         <div className="flex items-center gap-4 mb-10">
           <div className="rounded-full bg-purple-900/50 p-4">
@@ -224,7 +305,7 @@ const DailyCheckInPage = () => {
         </div>
         
         {/* Mood selection */}
-        <div className="mb-12 bg-azleep-dark/50 rounded-xl p-6 shadow-lg">
+        <div className="mb-8 bg-azleep-dark/50 rounded-xl p-6 shadow-lg">
           <h2 className="text-2xl font-semibold mb-6 text-center">
             How are you feeling tonight?
           </h2>
@@ -236,11 +317,12 @@ const DailyCheckInPage = () => {
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => handleMoodSelect(index)}
+                      disabled={isLoading}
                       className={`flex flex-col items-center justify-center p-5 rounded-full transition-all ${
                         selectedMood === index 
                           ? `${mood.color} scale-110 shadow-lg` 
                           : 'bg-white/10 hover:bg-white/20'
-                      }`}
+                      } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <span className="text-3xl">{mood.emoji}</span>
                     </button>
@@ -253,6 +335,53 @@ const DailyCheckInPage = () => {
             </TooltipProvider>
           </div>
         </div>
+
+        {/* Stress Level Slider */}
+        <div className="mb-8 bg-azleep-dark/50 rounded-xl p-6 shadow-lg">
+          <h2 className="text-2xl font-semibold mb-4 text-center">
+            What's your stress level?
+          </h2>
+          <p className="text-center text-gray-400 mb-6">
+            Current level: <span className="text-white font-semibold">{stressLevel[0]}/10</span> - {getStressDescription(stressLevel[0])}
+          </p>
+          
+          <div className="space-y-4">
+            <Slider
+              value={stressLevel}
+              onValueChange={handleStressChange}
+              max={10}
+              min={1}
+              step={1}
+              disabled={isLoading}
+              className="w-full"
+            />
+            
+            <div className="flex justify-between text-sm text-gray-400">
+              <span>1 - Very relaxed</span>
+              <span>10 - Very stressed</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Complete Check-in Button */}
+        {selectedMood !== null && (
+          <div className="mb-8 text-center">
+            <Button
+              onClick={handleCompleteCheckIn}
+              disabled={isLoading}
+              className="px-8 py-3 bg-azleep-accent hover:bg-azleep-accent/80 text-white font-semibold rounded-xl"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Complete Check-in'
+              )}
+            </Button>
+          </div>
+        )}
         
         {/* Suggestions - only shown when a mood is selected */}
         {selectedMood !== null && (

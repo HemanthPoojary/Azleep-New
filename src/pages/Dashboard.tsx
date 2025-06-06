@@ -32,9 +32,23 @@ import {
   Tooltip, 
   ResponsiveContainer 
 } from 'recharts';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 // Session storage key for sleep questions
 const SLEEP_QUESTIONS_KEY = 'azleep_sleep_questions_answered';
+
+function getSleepQualityNumber(quality: string): number {
+  switch (quality) {
+    case 'bad': return 1;
+    case 'okay': return 2;
+    case 'good': return 3;
+    case 'great': return 4;
+    default:
+      console.warn('Invalid sleep quality value:', quality, 'Defaulting to 3 (good)');
+      return 3;
+  }
+}
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -43,8 +57,13 @@ const Dashboard = () => {
   const [showSleepQuestions, setShowSleepQuestions] = useState(false);
   const [sleepHours, setSleepHours] = useState<string>("8");
   const [sleepQuality, setSleepQuality] = useState<string>("good");
-  const { user } = useAuth();
+  const { user, signOut, loading } = useAuth();
   const isMobile = useIsMobile();
+  const [showAddSleepModal, setShowAddSleepModal] = useState(false);
+  const [addSleepDate, setAddSleepDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [addSleepHours, setAddSleepHours] = useState('8');
+  const [addSleepQuality, setAddSleepQuality] = useState('good');
+  const [addSleepLoading, setAddSleepLoading] = useState(false);
   
   // Get time of day for greeting
   const getGreeting = () => {
@@ -55,7 +74,7 @@ const Dashboard = () => {
   };
   
   // Fetch sleep records
-  const { data: sleepData, isLoading: isSleepDataLoading } = useQuery({
+  const { data: sleepData, isLoading: isSleepDataLoading, error: sleepDataError, refetch: refetchSleepData } = useQuery({
     queryKey: ['sleepRecords', user?.id],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
@@ -137,6 +156,12 @@ const Dashboard = () => {
     }
   }, [user]);
   
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/login');
+    }
+  }, [user, loading, navigate]);
+  
   const handleStillAwake = () => {
     setShowNudge(true);
   };
@@ -149,14 +174,11 @@ const Dashboard = () => {
 
   const handleSleepQuestionsSubmit = async () => {
     if (!user) return;
-    
     try {
       // Parse sleep hours as a number
       const duration = sleepHours === "9+" ? 9 : parseInt(sleepHours);
-      
       // Get today's date in YYYY-MM-DD format
       const today = new Date().toISOString().split('T')[0];
-      
       // Check if we already have a record for today
       const { data: existingRecord } = await supabase
         .from('sleep_tracking')
@@ -164,31 +186,28 @@ const Dashboard = () => {
         .eq('user_id', user.id)
         .eq('sleep_date', today)
         .single();
-      
       if (existingRecord) {
-        // Update existing record
         await supabase
           .from('sleep_tracking')
           .update({ 
             sleep_hours: duration,
-            sleep_quality: sleepQuality.charAt(0).toUpperCase() + sleepQuality.slice(1)
+            sleep_quality: getSleepQualityNumber(sleepQuality)
           })
           .eq('id', existingRecord.id);
       } else {
-        // Insert new record
         await supabase
           .from('sleep_tracking')
           .insert({ 
             user_id: user.id,
             sleep_hours: duration,
-            sleep_quality: sleepQuality.charAt(0).toUpperCase() + sleepQuality.slice(1),
+            sleep_quality: getSleepQualityNumber(sleepQuality),
             sleep_date: today
           });
       }
-      
+      // Refetch sleep data after save
+      await refetchSleepData();
       toast.success("Thanks for sharing your sleep data!");
       setShowSleepQuestions(false);
-      // Mark sleep questions as answered for this session
       sessionStorage.setItem(SLEEP_QUESTIONS_KEY, 'true');
     } catch (error) {
       console.error("Error saving sleep data:", error);
@@ -249,20 +268,99 @@ const Dashboard = () => {
   const userOccupation = user?.occupation || undefined;
   const userSleepIssues = user?.sleep_issues || undefined;
 
+  const handleLogout = async () => {
+    await signOut();
+    window.location.href = '/login';
+  };
+
+  const handleAddSleepSubmit = async () => {
+    if (!user) return;
+    setAddSleepLoading(true);
+    try {
+      let duration = 8;
+      if (addSleepHours === '9+') duration = 9;
+      else if (!isNaN(Number(addSleepHours))) duration = Number(addSleepHours);
+      else duration = 8;
+      // Ensure only allowed values for sleep_quality
+      let qualityNum = getSleepQualityNumber(addSleepQuality);
+      if (![1, 2, 3, 4].includes(qualityNum)) qualityNum = 3; // fallback to 'good'
+      console.log('DEBUG: addSleepQuality:', addSleepQuality, 'qualityNum:', qualityNum);
+      const insertObj = { user_id: user.id, sleep_hours: duration, sleep_quality: qualityNum, sleep_date: addSleepDate };
+      console.log('DEBUG: Insert object:', JSON.stringify(insertObj));
+      const { data: existingRecord, error: selectError } = await supabase
+        .from('sleep_tracking')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('sleep_date', addSleepDate)
+        .single();
+      if (selectError && selectError.code !== 'PGRST116') {
+        console.error('Supabase select error:', selectError);
+        toast.error('Error checking for existing record: ' + selectError.message);
+        setAddSleepLoading(false);
+        return;
+      }
+      if (existingRecord) {
+        const { error: updateError } = await supabase
+          .from('sleep_tracking')
+          .update({ sleep_hours: duration, sleep_quality: qualityNum })
+          .eq('id', existingRecord.id);
+        if (updateError) {
+          console.error('Supabase update error:', updateError);
+          toast.error('Failed to update sleep data: ' + updateError.message);
+          setAddSleepLoading(false);
+          return;
+        }
+      } else {
+        const { error: insertError } = await supabase
+          .from('sleep_tracking')
+          .insert(insertObj);
+        if (insertError) {
+          console.error('Supabase insert error:', JSON.stringify(insertError));
+          toast.error('Failed to add sleep data: ' + insertError.message);
+          setAddSleepLoading(false);
+          return;
+        }
+      }
+      await refetchSleepData();
+      toast.success('Sleep data added!');
+      setShowAddSleepModal(false);
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast.error('Failed to add sleep data: ' + (error.message || error));
+    } finally {
+      setAddSleepLoading(false);
+    }
+  };
+
   return (
     <>
       {/* Redirect component */}
       <RedirectToLanding />
       
       <PageContainer>
-        <div className="mb-6 space-y-2 animate-fade-in">
-          <h1 className="text-2xl md:text-3xl font-bold text-azleep-text">
-            {getGreeting()}, {userName}
-          </h1>
-          <p className="text-muted-foreground flex items-center">
-            <span className="inline-block h-3 w-3 rounded-full bg-green-400 mr-2"></span> 
-            Mood: {moodData && moodData[0]?.mood || "Calm"}
-          </p>
+        <div className="mb-6 space-y-2 animate-fade-in flex flex-col md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-azleep-text">
+              {getGreeting()}, {user?.first_name || user?.username || "User"}
+            </h1>
+            <p className="text-muted-foreground flex items-center">
+              <span className="inline-block h-3 w-3 rounded-full bg-green-400 mr-2"></span> 
+              Mood: {moodData && moodData[0]?.mood || "Calm"}
+            </p>
+          </div>
+          <div className="mt-2 md:mt-0 flex items-center gap-3">
+            <span className="text-sm text-azleep-text font-semibold">{user?.first_name || user?.username || "User"}</span>
+            <Button variant="outline" size="sm" onClick={handleLogout}>Logout</Button>
+          </div>
+        </div>
+
+        {/* Nudges Section at the top */}
+        <div className="mb-6">
+          <PersonalizedNudge 
+            age={userAge} 
+            occupation={userOccupation} 
+            sleepIssues={userSleepIssues} 
+          />
         </div>
 
         {/* Daily Sleep Questions Dialog */}
@@ -330,15 +428,6 @@ const Dashboard = () => {
           </AlertDialogContent>
         </AlertDialog>
         
-        {/* Display personalized sleep nudge */}
-        <div className="mb-6">
-          <PersonalizedNudge 
-            age={userAge} 
-            occupation={userOccupation} 
-            sleepIssues={userSleepIssues} 
-          />
-        </div>
-        
         <div className="grid gap-4 mb-8 md:grid-cols-2 lg:grid-cols-3">
           <SleepGenieButton 
             className="sleep-card h-20 justify-start hover-scale"
@@ -374,6 +463,7 @@ const Dashboard = () => {
               completedSessions={sleepStats.completedSessions} 
               totalMinutes={sleepStats.totalMinutes} 
             />
+            <Button variant="outline" size="sm" onClick={() => setShowAddSleepModal(true)} className="ml-4">Add Sleep Data</Button>
           </div>
           
           <div className="sleep-card h-64 mb-6">
@@ -492,6 +582,61 @@ const Dashboard = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Refresh Button for Sleep Data */}
+        <div className="flex justify-end mb-2">
+          <Button variant="outline" size="sm" onClick={async () => { await refetchSleepData(); toast.success('Sleep data refreshed!'); }} disabled={isSleepDataLoading}>
+            {isSleepDataLoading ? 'Refreshing...' : 'Refresh Sleep Data'}
+          </Button>
+        </div>
+
+        {/* Add Sleep Data Modal */}
+        <Dialog open={showAddSleepModal} onOpenChange={setShowAddSleepModal}>
+          <DialogContent className="max-w-md bg-gradient-to-br from-azleep-dark to-azleep-primary/30 border-white/10">
+            <DialogHeader>
+              <DialogTitle className="text-azleep-text">Add Sleep Data</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <label className="block text-white font-medium">Date</label>
+              <Input type="date" value={addSleepDate} onChange={e => setAddSleepDate(e.target.value)} max={new Date().toISOString().split('T')[0]} />
+              <label className="block text-white font-medium">Hours Slept</label>
+              <div className="flex gap-3 justify-around">
+                {["4", "5", "6", "7", "8", "9+"].map((hour) => (
+                  <button 
+                    key={hour}
+                    onClick={() => setAddSleepHours(hour)}
+                    className={`rounded-full w-10 h-10 flex items-center justify-center transition-all ${addSleepHours === hour ? "bg-azleep-accent scale-110 text-white" : "bg-white/10 text-gray-300 hover:bg-white/20"}`}
+                  >
+                    {hour}
+                  </button>
+                ))}
+              </div>
+              <label className="block text-white font-medium">Sleep Quality</label>
+              <div className="flex gap-3 justify-around">
+                {[
+                  { value: "bad", emoji: "😫", label: "Bad" },
+                  { value: "okay", emoji: "😐", label: "Okay" },
+                  { value: "good", emoji: "😊", label: "Good" },
+                  { value: "great", emoji: "🤩", label: "Great" }
+                ].map((quality) => (
+                  <button 
+                    key={quality.value}
+                    onClick={() => setAddSleepQuality(quality.value)}
+                    className={`flex flex-col items-center rounded-lg p-2 transition-all ${addSleepQuality === quality.value ? "bg-azleep-accent/80 scale-110" : "bg-white/10 hover:bg-white/20"}`}
+                  >
+                    <span className="text-2xl mb-1">{quality.emoji}</span>
+                    <span className="text-xs">{quality.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={handleAddSleepSubmit} disabled={addSleepLoading} className="bg-azleep-accent text-white hover:bg-azleep-accent/90 w-full">
+                {addSleepLoading ? 'Saving...' : 'Save Sleep Data'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </PageContainer>
     </>
   );

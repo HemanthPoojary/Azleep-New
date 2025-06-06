@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
@@ -76,13 +75,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .eq('id', userId)
         .single();
 
-      if (error) {
+      if (error && error.code === 'PGRST116') { // Not found
+        // Create a new profile if not found
+        const { data: newProfile, error: insertError } = await supabase
+          .from('user_profiles')
+          .insert({ id: userId })
+          .select()
+          .single();
+        if (insertError) throw insertError;
+        setUser(newProfile);
+      } else if (error) {
         throw error;
+      } else {
+        setUser(data);
       }
-
-      setUser(data);
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      console.error('Error fetching or creating user profile:', error);
     } finally {
       setLoading(false);
     }

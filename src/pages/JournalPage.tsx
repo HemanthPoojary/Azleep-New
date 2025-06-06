@@ -1,19 +1,19 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PageContainer from '@/components/layout/PageContainer';
-import { JournalCanvas } from '@/components/journal/JournalCanvas';
 import { JournalPrompts } from '@/components/journal/JournalPrompts';
 import { JournalSidebar } from '@/components/journal/JournalSidebar';
 import { JournalEntryModal } from '@/components/journal/JournalEntryModal';
+import JournalList from '@/components/journal/JournalList';
 import VoiceJournal from '@/components/journal/VoiceJournal';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { PenLine, BookOpen, Star, Calendar, MessageCircle } from 'lucide-react';
+import { PenLine, BookOpen, Star, Calendar, MessageCircle, List, Bot } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRelaxationPoints } from '@/hooks/use-relaxation-points';
 
 interface LocationState {
   mood?: string;
@@ -26,41 +26,11 @@ const JournalPage = () => {
   const state = location.state as LocationState;
   const isMobile = useIsMobile();
   const [showEntryModal, setShowEntryModal] = useState(false);
-  const [activeView, setActiveView] = useState<'canvas' | 'prompts' | 'voice'>('canvas');
+  const [activeView, setActiveView] = useState<'list' | 'prompts' | 'voice'>('list');
   const [moodFromCheckIn, setMoodFromCheckIn] = useState<string | undefined>(undefined);
   const [promptTypeFromCheckIn, setPromptTypeFromCheckIn] = useState<string | undefined>(undefined);
-  const [streakCount, setStreakCount] = useState(0);
-  const [points, setPoints] = useState(0);
-  const { user } = useAuth();
-
-  // Fetch user streak and points from database
-  useEffect(() => {
-    const fetchUserGamification = async () => {
-      if (!user) return;
-
-      try {
-        // This would ideally fetch from a gamification table
-        // For now, we'll use the count of journal entries as a simple streak/points system
-        const { data, error } = await supabase
-          .from('journal_entries')
-          .select('id')
-          .eq('user_id', user.id);
-        
-        if (error) throw error;
-        
-        if (data) {
-          // Calculate streak based on how many consecutive days user has journaled
-          // For now, just use the count as an approximation
-          setStreakCount(Math.min(data.length, 7)); // Cap at 7 for demo
-          setPoints(data.length * 10); // 10 points per journal entry
-        }
-      } catch (error) {
-        console.error('Error fetching gamification data:', error);
-      }
-    };
-
-    fetchUserGamification();
-  }, [user]);
+  const { user, loading } = useAuth();
+  const { points, getCurrentStreak } = useRelaxationPoints();
 
   // Handle navigation state for mood and prompt type
   useEffect(() => {
@@ -78,18 +48,17 @@ const JournalPage = () => {
     }
   }, [state]);
 
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/login');
+    }
+  }, [user, loading, navigate]);
+
   // Handle successful journal entry completion
   const handleJournalEntryComplete = () => {
-    // Update points and streak in UI immediately
-    setPoints(prev => prev + 10);
-    setStreakCount(prev => Math.min(prev + 1, 7));
-    
-    toast("Journal entry saved! +10 points", {
-      description: "Keep up your journaling streak for bonus rewards!",
-      action: {
-        label: "View Streaks",
-        onClick: () => toast("Streak feature coming soon!")
-      }
+    toast("Journal entry saved! Keep up the great work! ✨", {
+      description: "Your thoughts have been safely stored.",
+      duration: 4000,
     });
   };
 
@@ -113,11 +82,11 @@ const JournalPage = () => {
             <div className="hidden md:flex items-center gap-3 bg-white/5 backdrop-blur-sm p-2 rounded-lg border border-white/10">
               <div className="flex items-center gap-1">
                 <Star className="h-4 w-4 text-yellow-400" />
-                <span className="text-sm text-white">{points} pts</span>
+                <span className="text-sm text-white">{points?.total_points || 0} pts</span>
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="h-4 w-4 text-blue-400" />
-                <span className="text-sm text-white">{streakCount} day streak</span>
+                <span className="text-sm text-white">{getCurrentStreak()} day streak</span>
               </div>
             </div>
             
@@ -138,11 +107,12 @@ const JournalPage = () => {
             {/* View Toggle */}
             <div className="flex mb-4 bg-white/5 backdrop-blur-sm rounded-lg p-1">
               <Button
-                variant={activeView === 'canvas' ? 'default' : 'ghost'} 
-                onClick={() => setActiveView('canvas')}
+                variant={activeView === 'list' ? 'default' : 'ghost'} 
+                onClick={() => setActiveView('list')}
                 className="flex-1 font-normal"
               >
-                Canvas
+                <List className="h-4 w-4 mr-1" />
+                Entries
               </Button>
               <Button
                 variant={activeView === 'prompts' ? 'default' : 'ghost'}
@@ -156,15 +126,15 @@ const JournalPage = () => {
                 onClick={() => setActiveView('voice')} 
                 className="flex-1 font-normal"
               >
-                <MessageCircle className="h-4 w-4 mr-1" />
-                Chat
+                <Bot className="h-4 w-4 mr-1" />
+                AI Assistant
               </Button>
             </div>
             
             {/* Active Content */}
             <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6 min-h-[50vh] transition-all">
-              {activeView === 'canvas' ? (
-                <JournalCanvas onEntrySaved={handleJournalEntryComplete} />
+              {activeView === 'list' ? (
+                <JournalList onEntrySaved={handleJournalEntryComplete} />
               ) : activeView === 'prompts' ? (
                 <JournalPrompts 
                   initialCategory={promptTypeFromCheckIn} 
@@ -182,11 +152,11 @@ const JournalPage = () => {
             <div className="flex md:hidden items-center justify-center gap-6 mt-4 bg-white/5 backdrop-blur-sm p-3 rounded-lg border border-white/10">
               <div className="flex items-center gap-1">
                 <Star className="h-5 w-5 text-yellow-400" />
-                <span className="text-white">{points} points</span>
+                <span className="text-white">{points?.total_points || 0} points</span>
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="h-5 w-5 text-blue-400" />
-                <span className="text-white">{streakCount} day streak</span>
+                <span className="text-white">{getCurrentStreak()} day streak</span>
               </div>
             </div>
           </div>
@@ -199,11 +169,10 @@ const JournalPage = () => {
           )}
         </div>
         
-        {/* Entry Modal */}
+        {/* Journal Entry Modal */}
         <JournalEntryModal 
-          isOpen={showEntryModal} 
+          isOpen={showEntryModal}
           onClose={() => setShowEntryModal(false)}
-          initialMood={moodFromCheckIn}
           onEntrySaved={handleJournalEntryComplete}
         />
       </div>

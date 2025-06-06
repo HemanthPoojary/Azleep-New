@@ -16,6 +16,8 @@ import { StorageDemo } from "./pages/StorageDemo";
 import { AuthProvider } from "./contexts/AuthContext";
 import FloatingAssistant from "./components/sleep/FloatingAssistant";
 import { ElevenLabsDemo } from "./pages/ElevenLabsDemo";
+import AuthPage from "./pages/AuthPage";
+import DreamNarrativesPage from "./pages/DreamNarrativesPage";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +42,7 @@ const App = () => (
             <Route path="/app/journal" element={<JournalPage />} />
             <Route path="/app/storage" element={<StorageDemo />} />
             <Route path="/app/elevenlabs" element={<ElevenLabsDemo />} />
+            <Route path="/app/dream-narratives" element={<DreamNarrativesPage />} />
             
             {/* Legacy routes for backward compatibility */}
             <Route path="/onboarding" element={<Navigate to="/app/onboarding" />} />
@@ -50,6 +53,10 @@ const App = () => (
             
             {/* Redirect old routes */}
             <Route path="/app/stats" element={<Navigate to="/app/dashboard" />} />
+            
+            {/* Auth route */}
+            <Route path="/login" element={<AuthPage />} />
+            <Route path="/auth" element={<Navigate to="/login" />} />
             
             {/* Handle 404 */}
             <Route path="*" element={<NotFound />} />
