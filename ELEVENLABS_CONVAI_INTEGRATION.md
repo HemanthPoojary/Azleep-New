@@ -12,7 +12,7 @@ The integration provides multiple ways to interact with the ElevenLabs ConvAI vo
 
 ## Agent Configuration
 
-- **Agent ID**: `agent_01jwq3qhggez2r9tafedrvvw0c`
+- **Agent ID**: `agent_01jx21rsq8e8yre3fnt3k6g23j`
 - **SDK**: `@elevenlabs/convai-widget-embed`
 - **Documentation**: https://elevenlabs.io/docs/conversational-ai/overview
 
@@ -32,7 +32,7 @@ Located at: `src/components/sleep/ElevenLabsConvAI.tsx`
 
 ```tsx
 <ElevenLabsConvAI
-  agentId="agent_01jwq3qhggez2r9tafedrvvw0c"
+  agentId="agent_01jx21rsq8e8yre3fnt3k6g23j"
   onConversationStart={() => console.log('Started')}
   onConversationEnd={() => console.log('Ended')}
 />
@@ -73,7 +73,7 @@ import { ElevenLabsConvAI } from './components/sleep/ElevenLabsConvAI'
 function MyComponent() {
   return (
     <ElevenLabsConvAI 
-      agentId="agent_01jwq3qhggez2r9tafedrvvw0c"
+      agentId="agent_01jx21rsq8e8yre3fnt3k6g23j"
       style={{ height: '400px' }}
     />
   )
@@ -96,7 +96,7 @@ function MyComponent() {
 
   return (
     <ElevenLabsConvAI 
-      agentId="agent_01jwq3qhggez2r9tafedrvvw0c"
+      agentId="agent_01jx21rsq8e8yre3fnt3k6g23j"
       onConversationStart={handleStart}
       onConversationEnd={handleEnd}
     />
@@ -174,3 +174,6 @@ To use a different agent, simply change the `agentId` prop:
 3. Implement analytics tracking for conversations
 4. Add voice activity detection indicators
 5. Integrate with your app's user authentication system 
+
+<elevenlabs-convai agent-id="agent_01jx21rsq8e8yre3fnt3k6g23j"></elevenlabs-convai>
+<script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script> 

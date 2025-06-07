@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
-import { Mic, MicOff, Volume2, VolumeX, Bot } from 'lucide-react'
+import { Mic, MicOff, Volume2, VolumeX, Bot, UserCircle } from 'lucide-react'
 
 interface ElevenLabsAgentProps {
   agentId?: string
@@ -25,8 +25,10 @@ declare global {
   }
 }
 
+const DEFAULT_AGENT_ID = "agent_01jx21rsq8e8yre3fnt3k6g23j";
+
 export const ElevenLabsAgent: React.FC<ElevenLabsAgentProps> = ({
-  agentId = "agent_01jx21rsq8e8yre3fnt3k6g23j",
+  agentId = DEFAULT_AGENT_ID,
   onConversationStart,
   onConversationEnd,
   className = ""
@@ -34,6 +36,8 @@ export const ElevenLabsAgent: React.FC<ElevenLabsAgentProps> = ({
   const [isScriptLoaded, setIsScriptLoaded] = useState(false)
   const [isAgentActive, setIsAgentActive] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
+  const [messages, setMessages] = useState<{ sender: 'ai' | 'user', text: string }[]>([])
+  const [currentTranscript, setCurrentTranscript] = useState('')
   const widgetRef = useRef<any>(null)
   const scriptRef = useRef<HTMLScriptElement | null>(null)
 
@@ -108,21 +112,22 @@ export const ElevenLabsAgent: React.FC<ElevenLabsAgentProps> = ({
   }
 
   const startConversation = () => {
-    const widget = widgetRef.current as any
-    if (widget && widget.start) {
-      widget.start()
-    }
     setIsAgentActive(true)
+    setMessages(prev => [...prev, { sender: 'ai', text: 'Hello! How can I help you sleep better tonight?' }])
     onConversationStart?.()
   }
 
   const stopConversation = () => {
-    const widget = widgetRef.current as any
-    if (widget && widget.stop) {
-      widget.stop()
-    }
     setIsAgentActive(false)
+    setCurrentTranscript('')
     onConversationEnd?.()
+  }
+
+  const handleSend = (text: string) => {
+    setMessages(prev => [...prev, { sender: 'user', text }])
+    setTimeout(() => {
+      setMessages(prev => [...prev, { sender: 'ai', text: 'This is a sample AI response.' }])
+    }, 1000)
   }
 
   if (!isScriptLoaded) {
@@ -161,7 +166,6 @@ export const ElevenLabsAgent: React.FC<ElevenLabsAgentProps> = ({
             </p>
           </div>
         </div>
-        
         <div className="flex items-center gap-1">
           <Button
             size="sm"
@@ -171,7 +175,6 @@ export const ElevenLabsAgent: React.FC<ElevenLabsAgentProps> = ({
           >
             {isMuted ? <VolumeX className="h-4 w-4 text-blue-600" /> : <Volume2 className="h-4 w-4 text-blue-600" />}
           </Button>
-          
           <Button
             size="sm"
             variant={isAgentActive ? "destructive" : "default"}
@@ -192,7 +195,6 @@ export const ElevenLabsAgent: React.FC<ElevenLabsAgentProps> = ({
           </Button>
         </div>
       </div>
-
       {/* Welcome Message for ElevenLabs */}
       {!isAgentActive && (
         <div className="text-center py-6 mb-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-200/30">
@@ -209,7 +211,6 @@ export const ElevenLabsAgent: React.FC<ElevenLabsAgentProps> = ({
           </Badge>
         </div>
       )}
-
       {/* ElevenLabs Widget */}
       <div 
         className={`elevenlabs-widget-wrapper border-2 ${isAgentActive ? 'border-blue-500 shadow-lg shadow-blue-500/20' : 'border-blue-200'} rounded-lg overflow-hidden`}
@@ -222,11 +223,10 @@ export const ElevenLabsAgent: React.FC<ElevenLabsAgentProps> = ({
       >
         <elevenlabs-convai 
           ref={widgetRef}
-          agent-id={agentId}
+          agent-id={DEFAULT_AGENT_ID}
           style={{ width: '100%', height: '100%', display: 'block' }}
         />
       </div>
-
       {/* Status Footer */}
       {isAgentActive && (
         <div className="mt-4 text-center">

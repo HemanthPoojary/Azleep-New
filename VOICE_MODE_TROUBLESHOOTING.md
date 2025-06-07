@@ -194,3 +194,6 @@ You know voice mode is working when:
 - 🔊 You hear AI voice responses
 - 📊 Console shows "Voice conversation started"
 - 🌊 No text chat interface is visible 
+
+<elevenlabs-convai agent-id="agent_01jx21rsq8e8yre3fnt3k6g23j"></elevenlabs-convai>
+<script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script> 

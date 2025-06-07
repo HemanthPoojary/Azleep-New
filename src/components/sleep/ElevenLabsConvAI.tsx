@@ -81,10 +81,12 @@ export const ElevenLabsConvAI: React.FC<ElevenLabsConvAIProps> = ({
     }
   }, [onConversationStart, onConversationEnd])
 
+  const DEFAULT_AGENT_ID = "agent_01jx21rsq8e8yre3fnt3k6g23j";
+
   return (
     <div className={`elevenlabs-convai-container ${className}`} style={style}>
       <elevenlabs-convai 
-        agent-id={agentId}
+        agent-id={DEFAULT_AGENT_ID}
         voice-mode="true"
         auto-start="false"
         show-transcript="false"
