@@ -28,7 +28,7 @@ declare global {
 }
 
 export const ElevenLabsConvAI: React.FC<ElevenLabsConvAIProps> = ({
-  agentId = "agent_01jwq3qhggez2r9tafedrvvw0c",
+  agentId = "agent_01jx21rsq8e8yre3fnt3k6g23j",
   className = "",
   style = {},
   onConversationStart,

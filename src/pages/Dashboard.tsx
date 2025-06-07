@@ -39,7 +39,7 @@ import { Input } from '@/components/ui/input';
 const SLEEP_QUESTIONS_KEY = 'azleep_sleep_questions_answered';
 
 function getSleepQualityNumber(quality: string): number {
-  switch (quality) {
+  switch (quality.toLowerCase()) {
     case 'bad': return 1;
     case 'okay': return 2;
     case 'good': return 3;
@@ -281,29 +281,45 @@ const Dashboard = () => {
       if (addSleepHours === '9+') duration = 9;
       else if (!isNaN(Number(addSleepHours))) duration = Number(addSleepHours);
       else duration = 8;
-      // Ensure only allowed values for sleep_quality
-      let qualityNum = getSleepQualityNumber(addSleepQuality);
-      if (![1, 2, 3, 4].includes(qualityNum)) qualityNum = 3; // fallback to 'good'
-      console.log('DEBUG: addSleepQuality:', addSleepQuality, 'qualityNum:', qualityNum);
-      const insertObj = { user_id: user.id, sleep_hours: duration, sleep_quality: qualityNum, sleep_date: addSleepDate };
+
+      // Map lowercase to capitalized string values for DB
+      const qualityMap = {
+        bad: "Bad",
+        okay: "Okay",
+        good: "Good",
+        great: "Great"
+      };
+      const qualityString = qualityMap[addSleepQuality] || "Good";
+
+      const insertObj = { 
+        user_id: user.id, 
+        sleep_hours: duration, 
+        sleep_quality: qualityString, // Send string value
+        sleep_date: addSleepDate 
+      };
+      
       console.log('DEBUG: Insert object:', JSON.stringify(insertObj));
+
       const { data: existingRecord, error: selectError } = await supabase
         .from('sleep_tracking')
         .select('id')
         .eq('user_id', user.id)
         .eq('sleep_date', addSleepDate)
         .single();
+
       if (selectError && selectError.code !== 'PGRST116') {
         console.error('Supabase select error:', selectError);
         toast.error('Error checking for existing record: ' + selectError.message);
         setAddSleepLoading(false);
         return;
       }
+
       if (existingRecord) {
         const { error: updateError } = await supabase
           .from('sleep_tracking')
-          .update({ sleep_hours: duration, sleep_quality: qualityNum })
+          .update({ sleep_hours: duration, sleep_quality: qualityString }) // Send string value
           .eq('id', existingRecord.id);
+        
         if (updateError) {
           console.error('Supabase update error:', updateError);
           toast.error('Failed to update sleep data: ' + updateError.message);
@@ -314,6 +330,7 @@ const Dashboard = () => {
         const { error: insertError } = await supabase
           .from('sleep_tracking')
           .insert(insertObj);
+        
         if (insertError) {
           console.error('Supabase insert error:', JSON.stringify(insertError));
           toast.error('Failed to add sleep data: ' + insertError.message);
@@ -321,6 +338,7 @@ const Dashboard = () => {
           return;
         }
       }
+
       await refetchSleepData();
       toast.success('Sleep data added!');
       setShowAddSleepModal(false);
